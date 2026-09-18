@@ -1,0 +1,14 @@
+# Sanal ortam
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Araç önbellekleri
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
