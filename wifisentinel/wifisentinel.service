@@ -1,0 +1,64 @@
+# wifisentinel için systemd --user birimi — OPSİYONEL, KURULMADI
+#
+# Bu dosya betikle birlikte duruyor ama KURULMUŞ DEĞİL. Varsayılan kullanım
+# betiği terminalde açık tutup elle kontrol etmek; o yüzden bu birim
+# etkinleştirilmedi.
+#
+# İSTEĞE BAĞLI olarak kurmak istersen:
+#
+#   # 1) Aşağıdaki iki mutlak yolu KENDİ konumunla değiştir (bkz. not aşağıda)
+#   #    Documentation=...
+#   #    ExecStart=...
+#   mkdir -p ~/.config/systemd/user
+#   cp wifisentinel.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now wifisentinel.service
+#   journalctl --user -u wifisentinel -f        # logları izle
+#   systemctl --user stop wifisentinel          # durdur
+#
+# Hedef ağ burada YAZILMAZ. Betik, kendisiyle aynı dizindeki `config`
+# dosyasından okur (yoksa şablonla oluşturur); bu birim yalnızca --current
+# ile çalıştırır, yani bulunduğun ağa sadık kalır.
+#
+# Neden --user (sistem değil)?
+#   Radyoyu açma, DHCP yenileme, bağlanma gibi işlemlerin HEPSİ normal
+#   kullanıcı yetkisiyle yapılabilir — root gerekmez. Sistem servisi
+#   çalıştırmak için sudo gerektirir ve root'un $HOME'ı yanlış yere
+#   log yazar. --user bunların ikisini de önler.
+#
+# ÖNEMLİ — mutlak yol zorunlu:
+#   systemd, ExecStart için "birimin bulunduğu dizin" diye bir belirteç
+#   SUNMAZ. (%d systemd 262'de credentials dizinidir, birim dizini değil.)
+#   Yani repoyu nereye klonladıysan aşağıdaki yolları ona göre düzeltmen
+#   ŞART. Aksi hâlde birim "No such file or directory" ile başlamaz.
+#
+#   Alternatif: betiği /usr/local/bin'e koyarsan ExecStart'ı çıplak adla
+#   yazabilirsin (systemd standart dizinlerde arar):
+#       ExecStart=/usr/local/bin/wifisentinel.sh --current
+#
+# Dikkat: bu birim "internet gerçekten var mı" diye yoklama yapmaya devam
+# eder; çünkü bağlantı "bağlı" görünüp uplink ölüyken NM hiçbir olay üretmez.
+
+[Unit]
+Description=WiFi bağlantısını korur (L2+L3+L7 denetimi)
+Documentation=file:/PATH/TO/wifisentinel/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# --current: bulunduğun ağa sadık kal (betikte gömülü ağ adı yoktur).
+# Sabit bir ağa kilitlenmek istersen buradan --current'i kaldırma; onun
+# yerine config dosyasına WIFI_SSID=... yaz (ortam değişkeni de olur).
+ExecStart=/PATH/TO/wifisentinel/wifisentinel.sh --current
+
+# Yoklama zaten kendi içinde bekleme yapıyor; RestartSec fazladan
+# bekleme eklemesin.
+Restart=on-failure
+RestartSec=10
+
+# Servis yalnızca o ağda işe yarar; kapalıysa boşuna uyanmasın.
+# Kapatmak için: systemctl --user disable --now wifisentinel
+
+[Install]
+WantedBy=default.target
