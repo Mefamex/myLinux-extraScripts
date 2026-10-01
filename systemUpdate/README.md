@@ -1,17 +1,13 @@
 # systemUpdate
 
-A simple, clear way to update Arch Linux and the tools pacman does not own.
-
-The goal is one sentence: **small parts, each part asks for confirmation,
-every run is logged**.
+A clear way to update Arch Linux and the tools pacman does not own. Each part
+asks for confirmation and every run is logged.
 
 ## Installation
 
-The script installs nothing and runs from wherever you keep it. The only thing
-worth knowing in advance: `curl` and `jq` (both in Arch's `extra` repository, not
-`base`) make the VS Code channel show a real list of outdated extensions instead
-of listing everything you have. Without them the script still works — that one
-channel just says it could not check.
+The script installs nothing and runs from wherever you keep it. `curl` and `jq`
+(both in Arch's `extra` repository) let the VS Code channel show only outdated
+extensions. Without them, that channel reports that it could not check.
 
 ```bash
 git clone https://github.com/Mefamex/myLinux-extraScripts.git
@@ -19,28 +15,21 @@ cd myLinux-extraScripts/systemUpdate
 ./systemUpdate.sh --status    # read-only: see what is pending first
 ```
 
-If you prefer, copy just this directory somewhere else — it is
-self-contained and never reads anything outside it.
-
-Settings live in `config`, which IS tracked in git: every line in it is
-commented out, so a fresh clone runs correctly as-is and you can see exactly
-which values ship. Uncomment a line to change a value, or pass an environment
-variable for a change that is yours alone. The script also runs fine if
-`config` is deleted — every setting has a built-in default.
+The directory is self-contained. Settings live in the tracked `config` file;
+environment variables override its values, and built-in defaults are used if it
+is missing.
 
 ### What it expects to be installed
 
-The system step uses whatever you already have; nothing is installed for you.
-
-| Command | Used for | If missing |
-|---|---|---|
-| `yay` | system + AUR updates | step 2 stops with an error |
-| `sudo` | keyring and package updates | asks for your password |
-| `pacman` | keyring, kernel detection | always present on Arch |
-| `fwupdmgr` | firmware | step 3 is skipped |
-| `dkms` | kernel modules | step 4 is skipped |
-| `checkupdates` | the `--status` package report | `--status` says so and skips that part |
-| `curl` + `jq` | the VS Code extension report (compares against the marketplace) | that channel lists what is installed instead and says it could not check; everything else still works |
+| Command        | Used for                                                        | If missing                                                                                            |
+| -------------- | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `yay`          | system + AUR updates                                            | step 2 stops with an error                                                                            |
+| `sudo`         | keyring and package updates                                     | asks for your password                                                                                |
+| `pacman`       | keyring, kernel detection                                       | always present on Arch                                                                                |
+| `fwupdmgr`     | firmware                                                        | step 3 is skipped                                                                                     |
+| `dkms`         | kernel modules                                                  | step 4 is skipped                                                                                     |
+| `checkupdates` | the `--status` package report                                   | `--status` says so and skips that part                                                                |
+| `curl` + `jq`  | the VS Code extension report (compares against the marketplace) | that channel lists what is installed instead and says it could not check; everything else still works |
 
 App channels check themselves: a channel whose tool is not installed is
 reported as *not installed* and skipped, so a missing `npm` or `uv` never
@@ -70,19 +59,14 @@ and so on — nothing is ever overwritten. Old logs are pruned automatically
 
 ### Where logs go
 
-By default, the script does **not** hardcode a path. Instead, it resolves a
-log directory via a cascade, using the first one that exists and is writable:
+By default, the script uses the first writable directory in this cascade:
 
 1. **Your localized Documents folder** — via `xdg-user-dir DOCUMENTS`. On a
    Turkish system this is `~/Belgeler/systemUpdate`; on English `~/Documents/systemUpdate`.
 2. **XDG user-dirs config** — `~/.config/user-dirs.dirs` → `XDG_DOCUMENTS_DIR`.
 3. **English fallback** — `~/Documents/systemUpdate` or `~/Document/systemUpdate`.
-4. **Home backup (not hidden)** — `~/systemUpdate`. Easy to find without
-   guessing.
+4. **Home backup** — `~/systemUpdate`.
 5. **XDG state dir (last resort)** — `~/.local/state/systemUpdate`.
-
-This mirrors `systemReport`'s approach and means logs land somewhere visible
-and expected on every machine, regardless of locale.
 
 To pin a specific directory, set `LOG_DIR` in `config` or pass
 `SYSUPDATE_LOG_DIR=/your/path` in the environment.
@@ -104,20 +88,20 @@ The order is intentional:
 App channels live in a single table inside `lib/apps.sh`. Each one is numbered
 (e.g. `1/16`) so you can see exactly how far the run has gone.
 
-| Channel | What it does |
-|---|---|
-| `npm` | `npm -g update` |
-| `code` | `code --update-extensions` |
-| `pipx` | `pipx upgrade-all` |
-| `uv` | `uv tool upgrade --all` |
-| `opencode` | `opencode upgrade` |
-| `claude` | `claude update` |
-| `codex` | `codex update` |
-| `pnpm` | `pnpm self-update` |
-| `pip` | `pip install --user -U <packages>` (with `--break-system-packages`) |
-| `go` | `go install <module>@latest` per tool |
-| `composer` | `composer global update` |
-| `gh` | `gh extension upgrade --all` |
+| Channel    | What it does                                                        |
+| ---------- | ------------------------------------------------------------------- |
+| `npm`      | `npm -g update`                                                     |
+| `code`     | `code --update-extensions`                                          |
+| `pipx`     | `pipx upgrade-all`                                                  |
+| `uv`       | `uv tool upgrade --all`                                             |
+| `opencode` | `opencode upgrade`                                                  |
+| `claude`   | `claude update`                                                     |
+| `codex`    | `codex update`                                                      |
+| `pnpm`     | `pnpm self-update`                                                  |
+| `pip`      | `pip install --user -U <packages>` (with `--break-system-packages`) |
+| `go`       | `go install <module>@latest` per tool                               |
+| `composer` | `composer global update`                                            |
+| `gh`       | `gh extension upgrade --all`                                        |
 
 Report-only channels (they print a list and never run an update): `cargo`,
 `docker`, `flatpak`, `dotnet`.
@@ -150,45 +134,31 @@ These are deliberate choices:
 
 ## Files
 
-| File | Purpose |
-|---|---|
-| `systemUpdate.sh` | Entry point: arguments, signal trap, log orchestration |
-| `config` | The settings. Tracked in git, every line commented out |
-| `lib/config.sh` | Loads settings from the config file or environment |
-| `lib/log.sh` | FIFO+tee logging, confirmations, reporting, log pruning |
-| `lib/system.sh` | The 5-step system update + reboot detection |
-| `lib/status.sh` | `--status` read-only reporting |
-| `lib/apps.sh` | The channel table + per-channel helpers |
-| `README.md` | This file |
-| `TODO.md` | Open work, notes on how things work, and why they are the way they are |
-| `.gitignore` | Only the temporary logging FIFOs (`config` is deliberately tracked) |
+| File              | Purpose                                                                |
+| ----------------- | ---------------------------------------------------------------------- |
+| `systemUpdate.sh` | Entry point: arguments, signal trap, log orchestration                 |
+| `config`          | The settings. Tracked in git, every line commented out                 |
+| `lib/config.sh`   | Loads settings from the config file or environment                     |
+| `lib/log.sh`      | FIFO+tee logging, confirmations, reporting, log pruning                |
+| `lib/system.sh`   | The 5-step system update + reboot detection                            |
+| `lib/status.sh`   | `--status` read-only reporting                                         |
+| `lib/apps.sh`     | The channel table + per-channel helpers                                |
+| `README.md`       | This file                                                              |
+| `TODO.md`         | Open work, notes on how things work, and why they are the way they are |
+| `.gitignore`      | Only the temporary logging FIFOs (`config` is deliberately tracked)    |
 
 ## Settings
 
 Settings come from the `config` file or the environment. The environment
 overrides the file.
 
-| Setting | Env var | Default | Notes |
-|---|---|---|---|
-| `LOG_DIR` | `SYSUPDATE_LOG_DIR` | *cascade* | Where log files go (see cascade below) |
-| `SKIP_CHANNELS` | `SYSUPDATE_SKIP_CHANNELS` | empty | Space-separated channel IDs to skip, e.g. `npm go` |
-| `GO_BIN_DIR` | `SYSUPDATE_GO_BIN_DIR` | `$HOME/go/bin` | Where `go install` places binaries |
-| `LOG_KEEP` | `SYSUPDATE_LOG_KEEP` | `50` | How many log files to keep |
-| `STATUS_AUR` | `SYSUPDATE_STATUS_AUR` | `0` | If `1`, `--status` also queries the AUR (`yay -Qua`) — this does a network request and is not instant |
-
-### LOG_DIR cascade
-
-When `LOG_DIR` is empty (the default), the log directory is resolved
-automatically using the first writable candidate:
-
-1. `xdg-user-dir DOCUMENTS` → `$candidate/systemUpdate` (e.g. `~/Belgeler/systemUpdate`)
-2. `~/.config/user-dirs.dirs` → `$XDG_DOCUMENTS_DIR/systemUpdate`
-3. English names → `~/Documents/systemUpdate`, `~/Document/systemUpdate`
-4. Home backup → `~/systemUpdate`
-5. XDG state dir → `${XDG_STATE_HOME:-$HOME/.local/state}/systemUpdate`
-
-To force a specific directory, set `LOG_DIR` in `config` or
-`SYSUPDATE_LOG_DIR=/path` in the environment.
+| Setting         | Env var                   | Default        | Notes                                                                                                 |
+| --------------- | ------------------------- | -------------- | ----------------------------------------------------------------------------------------------------- |
+| `LOG_DIR`       | `SYSUPDATE_LOG_DIR`       | *cascade*      | Where log files go (see "Where logs go" above)                                                        |
+| `SKIP_CHANNELS` | `SYSUPDATE_SKIP_CHANNELS` | empty          | Space-separated channel IDs to skip, e.g. `npm go`                                                    |
+| `GO_BIN_DIR`    | `SYSUPDATE_GO_BIN_DIR`    | `$HOME/go/bin` | Where `go install` places binaries                                                                    |
+| `LOG_KEEP`      | `SYSUPDATE_LOG_KEEP`      | `50`           | How many log files to keep                                                                            |
+| `STATUS_AUR`    | `SYSUPDATE_STATUS_AUR`    | `0`            | If `1`, `--status` also queries the AUR (`yay -Qua`) — this does a network request and is not instant |
 
 ## Reports are never truncated
 
@@ -205,23 +175,8 @@ the closing count:
       26 of 164 extensions have a newer version
 ```
 
-There is no cut-off line like `... (161 more lines)`. The final line is a count
-of what was printed above it, not a replacement for it.
-
-There used to be a `MAX_REPORT_LINES` setting that cut these lists at 12 lines.
-It existed for one channel only — VS Code — and it was hiding a wrong report
-rather than a long one: that channel printed `code --list-extensions`, which is
-the list of everything you *have*, not the list of what would change. 164 lines,
-of which most said "already installed". The channel now compares your installed
-versions against the marketplace and prints only the ones that are behind.
-
-A note on that comparison, since it is the one channel that touches the network:
-the `code` CLI has no "list outdated" flag, so the script queries the public
-marketplace API directly (`curl` + `jq`, both from the `extra` repository, not
-`base`). If either is missing, or the API does not answer, the channel says so
-and falls back to listing what is installed — it never reports "nothing to
-update" when it did not actually check. Measured cost: 164 extensions in about
-3 seconds, sent in batches of 100.
+If `curl` or `jq` is missing, or the marketplace does not respond, the channel
+reports that it could not check and falls back to listing installed extensions.
 
 ## FAQ / troubleshooting
 
