@@ -275,6 +275,10 @@ confirm() {
 	if [ "$REPORT_ONLY" = 1 ]; then
 		return 1
 	fi
+	if [ "${FULL_AUTO:-0}" -eq 1 ]; then
+		printf '    (--full: auto-yes)\n'
+		return 0
+	fi
 	if [ ! -t 0 ]; then
 		printf '    (no interaction, skipping)\n'
 		return 1

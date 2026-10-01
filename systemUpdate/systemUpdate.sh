@@ -7,10 +7,12 @@
 #   ./systemUpdate.sh --apps     npm/VS Code/pipx/uv/... channels only
 #   ./systemUpdate.sh --status   CHANGES NOTHING, reports only
 #   ./systemUpdate.sh --log      show the most recent log
+#   ./systemUpdate.sh --full     UPDATE EVERYTHING, ask no confirmations
 #   ./systemUpdate.sh --help
 #
-# The full stdout + stderr of every run is written to one file:
-#   ${XDG_STATE_HOME:-$HOME/.local/state}/systemUpdate/systemUpdateYYYY-MM-DD-HH-MM.txt
+# The full stdout + stderr of every run is written to one file.
+# Directory resolves via cascade:
+#   ~/Belgeler/systemUpdate → ~/Documents/systemUpdate → ~/systemUpdate → ~/.local/state/systemUpdate
 # Two runs in the same minute get -1, -2, ... instead of overwriting each other.
 #
 # Rules:
@@ -80,6 +82,7 @@ unset _HERE
 # --- arguments -----------------------------------------------------------
 
 SCOPE="all"
+FULL_AUTO=0
 for arg in "$@"; do
 	case "$arg" in
 	--system) SCOPE="system" ;;
@@ -89,6 +92,12 @@ for arg in "$@"; do
 	# "all" is already the default; spelled out so it can also be used as the
 	# script name in examples.
 	--all | --everything) SCOPE="all" ;;
+	# Update everything without asking. Still respects SKIP_CHANNELS and
+	# not-installed channels; it only skips the [y/N] confirmations.
+	--full)
+		FULL_AUTO=1
+		SCOPE="all"
+		;;
 	-h | --help)
 		# Print only the leading comment block (up to the first non-comment
 		# line). Not tied to line numbers, so adding lines cannot break it.
@@ -134,8 +143,10 @@ fi
 # --status never changes anything. Setting REPORT_ONLY=1 makes confirm() always
 # answer "no", so no separate branch is needed in the flow and every reported
 # channel travels the exact same code path (one path = one source of truth).
+REPORT_ONLY="${REPORT_ONLY:-0}"
+FULL_AUTO="${FULL_AUTO:-0}"
+export REPORT_ONLY FULL_AUTO
 if [ "$SCOPE" = "status" ]; then
-	# shellcheck disable=SC2034  # REPORT_ONLY is read in lib/log.sh
 	REPORT_ONLY=1
 fi
 
