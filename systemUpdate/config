@@ -1,93 +1,19 @@
-# systemUpdate — settings
-#
-# This file IS tracked in git, on purpose: every setting below is commented
-# out, so a fresh clone runs correctly as-is and a reviewer can see exactly
-# which values ship and which ones were changed. There is no separate template
-# file, because there is no per-user value that needs hiding.
-#
-# Precedence, strongest first:
-#   1. environment variables    SYSUPDATE_LOG_DIR="/tmp/opencode/fromconfig2"
-#   2. this file
-#   3. the built-in defaults noted under each setting
-#
-# This file is bash and is sourced by `lib/config.sh`. A `#` starts a comment;
-# delete it and write your value to activate a setting. Every line here is bash
-# syntax, so a typo is a real error, not silently ignored text.
-#
-# Changing a value here affects every future run of every machine that has this
-# file. For a change that is yours alone, prefer the environment variable.
+# systemUpdate — settings (tracked in git, all commented = defaults)
+# Precedence: env > this file > built-in defaults
+# Uncomment to change. For personal-only values, use env instead.
 
+# LOG_DIR — log directory (empty = auto cascade: Belgeler/ → Documents/ → ~/systemUpdate/ → ~/.local/state/systemUpdate)
+#LOG_DIR=""
 
-# ---------------------------------------------------------------------------
-# LOG_DIR — where log files are written
-# ---------------------------------------------------------------------------
-# Every run writes its full stdout + stderr to one file here.
-# File name: systemUpdateYYYY-MM-DD-HH-MM.txt, and two runs in the same minute
-# get -1, -2, ... so nothing is ever overwritten.
-#
-# LEAVE EMPTY to use the automatic cascade (preferred):
-#   1. xdg-user-dir DOCUMENTS       -> localized "Documents" (e.g. Belgeler)
-#   2. ~/.config/user-dirs.dirs     -> XDG_DOCUMENTS_DIR
-#   3. English names                -> $HOME/Documents, $HOME/Document
-#   4. Home backup (not hidden)     -> $HOME/systemUpdate
-#   5. XDG state dir (last resort)  -> ${XDG_STATE_HOME:-$HOME/.local/state}/systemUpdate
-#
-# To pin a specific directory, uncomment and set it:
-# LOG_DIR="/tmp/opencode/fromconfig2"
-LOG_DIR="/tmp/opencode/fromconfig2"
-
-
-# ---------------------------------------------------------------------------
-# LOG_KEEP — how many log files to keep
-# ---------------------------------------------------------------------------
-# After each run the older ones are deleted automatically, keeping this many
-# newest. This is the only place in the whole tool that deletes anything, and
-# it only ever removes log files this tool wrote — never a package, a config
-# file or a .pacnew.
-#
-# A value that is not a positive number is ignored and treated as "keep
-# everything", so a typo here can never delete your logs.
-#
-# Default: 50
+# LOG_KEEP — how many log files to keep (non-numeric = keep all, typo-safe)
 #LOG_KEEP=50
 
-
-# ---------------------------------------------------------------------------
-# SKIP_CHANNELS — channels that are never even asked about
-# ---------------------------------------------------------------------------
-# Space-separated channel ids, skipped without prompting.
-# Valid ids come from the channel table in lib/apps.sh:
-#
-#   updated by the tool:  npm code pipx uv opencode claude codex pnpm pip go
-#   reported only:        cargo docker flatpak dotnet composer gh
-#
-# Useful for a channel you never want touched, or one that is slow or noisy.
-#
-# Default: (none — every channel asks)
+# SKIP_CHANNELS — never ask about these (space-separated)
+# Valid: npm code pipx uv opencode claude codex pnpm pip go cargo docker flatpak dotnet composer gh
 #SKIP_CHANNELS=""
 
-
-# ---------------------------------------------------------------------------
-# GO_BIN_DIR — where `go install` puts its binaries
-# ---------------------------------------------------------------------------
-# The Go channel reads the module path embedded in each binary in this
-# directory and reinstalls it with `go install <path>@latest`. Point it at
-# your GOPATH bin folder.
-#
-# Default: $HOME/go/bin
+# GO_BIN_DIR — where go install puts binaries
 #GO_BIN_DIR="$HOME/go/bin"
 
-
-# ---------------------------------------------------------------------------
-# STATUS_AUR — include the AUR in --status
-# ---------------------------------------------------------------------------
-# --status reports the official repositories only, because that check
-# (checkupdates) is fast and offline. Setting this to 1 additionally runs
-# `yay -Qua`, which fetches the AUR git repository: a network operation that
-# can take seconds, so --status stops being a quick glance.
-#
-# Note that `yay -Qua` cannot report orphaned AUR packages either way — a
-# package no longer in the AUR is invisible to every query.
-#
-# Default: 0 (off)
+# STATUS_AUR — also query AUR in --status (1 = yes, needs network)
 #STATUS_AUR=0
