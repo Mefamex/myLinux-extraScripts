@@ -22,6 +22,7 @@
 # syntax       clean (`bash -n` on all 18 shell files)
 # language     English only, by decision (see Notes)
 # tracked      VERSION, config, README.md, todo.md, .gitignore, lib/**
+# committed    a304b4f (code + READMEs), 39bbcfb (this file)
 
 
 # -----------------------------------------------------------------------------
@@ -172,11 +173,7 @@
       `dmidecode`, `fdisk`, `smartctl`, `dmesg` and `efibootmgr` all produce
       output and none of them is silently empty.
 
-## 2. Commit
-- [x] Done in `a304b4f`. `systemReport/` plus the `README.md` entry only;
-      `systemUpdate/` was left alone in the working tree.
-
-## 3. Things that could be added later
+## 2. Things that could be added later
 - [ ] `--list` to print the section registry without collecting anything.
 - [ ] `--dry-run` that resolves all paths, prints them and stops.
 - [ ] Per-section size cap. The report is tens of thousands of lines and the

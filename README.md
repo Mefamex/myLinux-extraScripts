@@ -50,12 +50,12 @@ Arch Linux system and app updater, replacing the old `fullupdate` shell function
 ### [systemReport](systemReport/)
 Arch Linux system report collector. Collects hardware, network, packages, logs and configuration, modularly. **Written by @mefamex.** Code, settings, output labels and its own README are English only.
 
-  - [systemReport.sh](systemReport/systemReport.sh) — Main script. Section filter (`--only`), XDG-aware output root with a home-directory backup, terminal log (`terminal_log.txt`), keep-last-N reports.
+  - [systemReport.sh](systemReport/systemReport.sh) — Main script. Section filter (`--only`), XDG-aware output root with a home-directory backup, terminal log written inside each report, keep-last-N reports.
   - [lib/](systemReport/lib/) — Infrastructure modules (`version.sh`, `config.sh`, `output.sh`, `log.sh`, `sudo.sh`, `report.sh`, `cleanup.sh`).
   - [lib/sections/](systemReport/lib/sections/) — 10 sections, one file each (`00_privacy` → `09_users`).
   - `config` — Settings (`REPORT_ROOT`, `KEEP_REPORTS`, `USE_SUDO_CHECKS`, `CLEANUP_ENABLED`, `LOG_FILE`). Lives **next to the script** and is tracked in the repository — no template file, no git-ignored personal copy.
   - [VERSION](systemReport/VERSION) — Single source of truth for version, version date and author (5.0.2 / 2026-10-01 / @mefamex).
-  - [README.md](systemReport/README.md) — Usage, settings, structure, sections and deliberate non-goals.
+  - [README.md](systemReport/README.md) — Verification status, usage, settings, structure, sections and deliberate non-goals.
   - [todo.md](systemReport/todo.md) — Working notes: what is done, what is still open, and the decisions behind them.
 
 <br><hr><br>

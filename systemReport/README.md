@@ -22,11 +22,11 @@ in one place. Each section is written to its own file, everything is merged into
 `arch_full_report.txt`, and every line printed to the terminal is saved to
 `terminal_log.txt` without colour codes.
 
-What changed compared to the previous version: fully modular (one file per
-section under `lib/sections/`), version information kept in a **single source
-of truth** (`VERSION`), the report directory resolved from XDG rules with a
-home-directory backup, and old reports pruned with a "keep the last N" rule
-instead of being deleted wholesale.
+How it is put together: one file per section under `lib/sections/`, version
+information in a **single source of truth** (`VERSION`), the report directory
+resolved from XDG rules with a home-directory backup, old reports pruned with a
+"keep the last N" rule instead of being deleted wholesale, and the terminal log
+written inside each report folder so a folder is a self-contained artefact.
 
 ## Features
 
@@ -51,6 +51,17 @@ instead of being deleted wholesale.
 - **Readable output**: boundaries are two or three lines tall, so the shape of a
   run is legible while it scrolls.
 - **ShellCheck clean**: every `.sh` file passes `shellcheck -x`.
+
+## Verification status
+
+Tested on a real Arch machine on 2026-10-01: every flag, every environment
+variable, invalid input and its exit code, all ten sections one by one and in a
+full run, cleanup with fake old report folders, and the same-second collision
+path. `bash -n` and `shellcheck -x` are clean on all 18 shell files.
+
+Two paths are not proven yet and are listed in `todo.md`: a failed `sudo`
+validation (a genuinely wrong password), and reading an alternate config file
+through `SR_CONFIG`.
 
 ## Usage
 
