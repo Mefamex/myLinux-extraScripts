@@ -173,8 +173,8 @@
       output and none of them is silently empty.
 
 ## 2. Commit
-- [ ] `git add systemReport/` and commit as one commit. Nothing else in the
-      working tree goes in.
+- [x] Done in `a304b4f`. `systemReport/` plus the `README.md` entry only;
+      `systemUpdate/` was left alone in the working tree.
 
 ## 3. Things that could be added later
 - [ ] `--list` to print the section registry without collecting anything.
