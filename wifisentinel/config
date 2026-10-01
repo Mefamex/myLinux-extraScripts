@@ -1,0 +1,26 @@
+# wifisentinel — settings (tracked in git, all commented = defaults)
+# Precedence: env > this file > built-in defaults
+# Uncomment to change. For personal-only values, use env instead.
+
+# WIFI_SSID — SSID to stay connected to
+# Empty = stay on currently connected network (--current mode)
+# WIFI_SSID="your-network-name"
+
+# WIFI_DEVICE — wireless interface; empty = auto-detect
+# WIFI_DEVICE=wlan0
+
+# --- timing ---
+# WIFI_POLL=15                poll interval (seconds)
+# WIFI_CONNECT_TIMEOUT=45     connection wait (seconds)
+# WIFI_OFFLINE_LIMIT=3        consecutive L7 failures before recovery
+# WIFI_L7_MAX_RECOVER=3       max full reconnection attempts
+# WIFI_RADIO_AFTER=3          failed connects before radio toggle
+# WIFI_RSSI_WARN=-75          signal warning threshold (dBm)
+# WIFI_KEEPALIVE=0            captive portal keepalive (seconds, 0=off)
+
+# --- internet check URLs (newline separated) ---
+# WIFI_PROBES=http://a/\nhttp://b/
+
+# --- logging ---
+# WIFI_LOG_MAX=262144                    256 KB; rotates to .1 when exceeded
+# WIFI_SENTINEL_LOG=/full/path/to/log
