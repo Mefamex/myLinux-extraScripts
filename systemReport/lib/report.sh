@@ -102,3 +102,23 @@ read_section_title() {
 	[ -n "$line" ] || printf '%s' "${name%.txt}"
 	printf '%s' "$line"
 }
+
+# VERSION.txt: the stamp saying which version, which author and which machine
+# produced this report. Months later, when the folder turns up in a bug report,
+# the question "what collected this" is answerable from the folder alone.
+write_version_stamp() {
+	local commit='(unknown)'
+	if command -v git >/dev/null 2>&1 && git -C "$_HERE" rev-parse --git-dir >/dev/null 2>&1; then
+		commit="$(git -C "$_HERE" rev-parse --short HEAD 2>/dev/null)" || commit='(unknown)'
+	fi
+
+	{
+		printf 'systemReport %s\n' "$VERSION"
+		printf 'version date: %s\n' "$VERSION_DATE"
+		printf 'author      : %s\n' "$AUTHOR"
+		printf 'collected   : %s\n' "$(timestamp)"
+		printf 'host        : %s\n' "$HOST_NAME"
+		printf 'kernel      : %s\n' "$(uname -r 2>/dev/null)"
+		printf 'repo commit : %s\n' "$commit"
+	} >"$REPORT_DIR/VERSION.txt"
+}

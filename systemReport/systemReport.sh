@@ -356,6 +356,7 @@ _log_has_content=false
 	printf 'systemReport %s - terminal log\n' "$VERSION_INFO"
 	printf 'Author   : %s\n' "$AUTHOR"
 	printf 'Host     : %s\n' "$HOST_NAME"
+	printf 'Kernel   : %s\n' "$(uname -r 2>/dev/null)"
 	printf 'Started  : %s\n' "$(timestamp)"
 	rule 2 '-'
 } >>"$LOG_FILE" 2>/dev/null
@@ -437,7 +438,6 @@ _log_name="$(basename "$LOG_FILE")"
 		sort
 	printf 'Combined report: arch_full_report.txt  (%s bytes)\n' "$_merged_size"
 	printf 'Terminal log   : %s  (%s bytes)\n' "$_log_name" "$_log_size"
-	printf 'Version stamp  : VERSION.txt  (systemReport %s)\n' "$VERSION_INFO"
 	printf '\nFinished: %s\n' "$(timestamp)"
 	rule 2 '-'
 } >>"$LOG_FILE"
