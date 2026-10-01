@@ -14,6 +14,8 @@
 
 section_05() {
 	printf -- '\n\n\n--- Interfaces (ip a) ---\n\n'
+	printf -- 'NOTE: This section contains real IP addresses, MAC addresses, and\n'
+	printf -- 'network topology. Review 00_privacy.txt before sharing this report.\n\n'
 	ip -c=never a 2>/dev/null || echo 'ip could not run.'
 
 	printf '\n\n\n--- Routing Table ---\n\n'

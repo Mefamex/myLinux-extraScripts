@@ -37,8 +37,15 @@ prepare_sudo() {
 
 	info "Some checks need root (your password is asked for once)..."
 
-	# -v validates and refreshes the timestamp. -n would be wrong here: the
-	# password has not been entered yet.
+	# -v validates and refreshes the timestamp. In non-interactive mode (cron/timer),
+	# use -n to fail immediately instead of hanging on a password prompt.
+	if [ ! -t 0 ]; then
+		warn "Non-interactive mode — cannot prompt for sudo password."
+		warn "  Run interactively, or configure passwordless sudo / SUDO_ASKPASS."
+		SUDO_OK=0
+		return 0
+	fi
+
 	if sudo -v; then
 		SUDO_OK=1
 	else

@@ -37,8 +37,8 @@ section_08() {
 	printf '\n\n\n--- /etc/locale.gen (enabled locales) ---\n\n'
 	grep -vE '^\s*#|^\s*$' /etc/locale.gen 2>/dev/null || printf 'could not read.\n'
 
-	printf '\n\n\n--- /etc/environment (SENSITIVE: may hold passwords or API keys) ---\n\n'
-	cat /etc/environment 2>/dev/null || printf 'could not read.\n'
+	printf '\n\n\n--- /etc/environment (sensitive entries redacted) ---\n\n'
+	grep -vE '(TOKEN|KEY|PASS|SECRET|API_|PASSWORD)' /etc/environment 2>/dev/null || printf 'could not read.\n'
 
 	printf '\n\n\n--- /etc/vconsole.conf ---\n\n'
 	cat /etc/vconsole.conf 2>/dev/null || printf 'could not read.\n'

@@ -57,12 +57,13 @@ section_07() {
 	# Writing to a temporary file first, instead of discarding stderr, is
 	# what makes the difference between "no errors" and "could not read the
 	# journal" being distinguishable in the finished report.
-	if journalctl -b -p 3 --no-pager -n 100 >/tmp/.sr_journal.$$ 2>/dev/null; then
-		cat /tmp/.sr_journal.$$
+	_tmp_j="$(mktemp /tmp/.sr_journal.XXXXXX 2>/dev/null)" || _tmp_j="/tmp/.sr_journal.$$"
+	if journalctl -b -p 3 --no-pager -n 100 >"$_tmp_j" 2>/dev/null; then
+		cat "$_tmp_j"
 	else
 		printf 'No access to the journal, or it is empty. Tried: journalctl -b -p 3\n'
 	fi
-	rm -f /tmp/.sr_journal.$$
+	rm -f "$_tmp_j"
 
 	printf '\n\n\n--- Tail of the Previous Boot (last 40 lines) ---\n\n'
 	# journalctl's exit code says whether the previous boot exists at all.
