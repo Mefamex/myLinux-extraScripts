@@ -33,15 +33,30 @@ section_09() {
 	if [ -r /var/log/auth.log ] || [ -r /var/log/secure ]; then
 		local log='/var/log/auth.log'
 		[ -r "$log" ] || log='/var/log/secure'
-		grep -iE 'failed password|authentication failure' "$log" 2>/dev/null |
-			tail -n 20 || printf 'no matching records.\n'
+		# grep's own exit code decides the message: "no matching records" and
+		# "could not read the file" must not be reported as each other.
+		if _fail="$(grep -iE 'failed password|authentication failure' "$log" 2>/dev/null)"; then
+			printf '%s\n' "$_fail" | tail -n 20
+		elif [ -r "$log" ]; then
+			printf 'no matching records in %s.\n' "$log"
+		else
+			printf 'could not read %s.\n' "$log"
+		fi
+		unset _fail
 	else
 		printf 'no auth.log (on a journald-based system try: journalctl _COMM=systemd-logind).\n'
 	fi
 
 	printf '\n\n\n--- User Services (systemd --user) ---\n\n'
 	if command -v systemctl >/dev/null 2>&1; then
-		systemctl --user list-units --type=service --no-pager 2>/dev/null |
-			head -n 20 || printf 'no user session.\n'
+		# systemctl --user fails outright when there is no user manager to
+		# talk to. That is the case worth naming, and it is only visible from
+		# systemctl's exit code, not from `... | head`.
+		if _units="$(systemctl --user list-units --type=service --no-pager 2>/dev/null)"; then
+			printf '%s\n' "$_units" | head -n 20
+		else
+			printf 'no user session, or not accessible.\n'
+		fi
+		unset _units
 	fi
 }

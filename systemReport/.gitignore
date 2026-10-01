@@ -1,4 +1,0 @@
-# Report folders are written into the user's home directory, but they can also
-# end up next to the script when -o points here, so keep them out of the repo.
-/arch_report_*/
-/terminal_log.txt

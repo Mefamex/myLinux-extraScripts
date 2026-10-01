@@ -20,7 +20,6 @@ uploading it anywhere (a forum, an issue tracker, a chat):
   06_packages.txt      full package list (a map of your installed software)
   08_configuration.txt /etc/environment, fstab UUIDs, modprobe rules
   02_hardware.txt      RAM and disk serial numbers
-  VERSION.txt          host name and kernel version
   terminal_log.txt     the terminal output of this run (contains all of the above)
 
 The two files that matter most are 05_network.txt and 08_configuration.txt.

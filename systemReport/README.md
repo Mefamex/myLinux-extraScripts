@@ -34,7 +34,7 @@ written inside each report folder so a folder is a self-contained artefact.
   readable, maintenance is cheap.
 - **Version system**: `VERSION` is the only place a version number exists. It
   is printed in the banner, in `--version`, in every section header, in the
-  combined report, in `VERSION.txt` and in the terminal log.
+  combined report and at the start of the terminal log.
 - **Automatic output root**: `xdg-user-dir DOCUMENTS` → `XDG_DOCUMENTS_DIR` →
   `~/Documents` → `~/systemReport` (home backup) → `~/.local/share/systemReport`.
   No localised name such as "Belgeler" is hardcoded anywhere.
@@ -98,13 +98,13 @@ repository on purpose**: the defaults live there, so a fresh clone runs
 immediately and a reviewer can see the shipped settings. There is no template
 file and no git-ignored personal copy.
 
-| Setting           | Meaning                                              | Default          |
-| ----------------- | ---------------------------------------------------- | ---------------- |
-| `REPORT_ROOT`     | Parent directory for report folders, empty = auto     | auto             |
-| `KEEP_REPORTS`    | How many reports to keep                              | 10               |
-| `USE_SUDO_CHECKS` | `1/0` — run the checks that need root                 | 1                |
-| `CLEANUP_ENABLED` | `1/0` — delete reports beyond `KEEP_REPORTS`          | 1                |
-| `LOG_FILE`        | Terminal log path; empty = inside each report         | per-report       |
+| Setting           | Meaning                                           | Default    |
+| ----------------- | ------------------------------------------------- | ---------- |
+| `REPORT_ROOT`     | Parent directory for report folders, empty = auto | auto       |
+| `KEEP_REPORTS`    | How many reports to keep                          | 10         |
+| `USE_SUDO_CHECKS` | `1/0` — run the checks that need root             | 1          |
+| `CLEANUP_ENABLED` | `1/0` — delete reports beyond `KEEP_REPORTS`      | 1          |
+| `LOG_FILE`        | Terminal log path; empty = inside each report     | per-report |
 
 `config` is sourced by the shell, so `~` inside a quoted value is **not**
 expanded. Write `"$HOME/systemReport"`, not `"~/systemReport"` — the latter
@@ -143,7 +143,7 @@ write instead of swallowing it.
 | ---------------- | ------------------------------ |
 | `SR_REPORT_ROOT` | Report root (parent directory) |
 | `SR_KEEP`        | Reports to keep                |
-| `SR_SUDO`        | `0` skips root-only checks    |
+| `SR_SUDO`        | `0` skips root-only checks     |
 | `SR_CLEANUP`     | `0` leaves old reports alone   |
 | `SR_LOG`         | Terminal log path              |
 | `SR_CONFIG`      | Use a different config file    |
@@ -173,7 +173,6 @@ systemReport/
 ├── systemReport.sh           # entry point
 ├── VERSION                   # single source of truth (VERSION, VERSION_DATE, AUTHOR)
 ├── config                    # settings, tracked in the repository
-├── .gitignore                # report folders and stray terminal_log.txt
 ├── README.md
 ├── todo.md                   # working notes: done, open, decisions
 └── lib/
@@ -193,18 +192,18 @@ systemReport/
 
 ## Sections
 
-| No  | File                     | Contents                                                       |
-| --- | ------------------------ | -------------------------------------------------------------- |
-| 00  | `00_privacy.txt`         | Privacy notice (read before sharing)                            |
-| 01  | `01_system.txt`          | Kernel, distribution, boot time, session                        |
-| 02  | `02_hardware.txt`        | CPU, RAM (dmidecode), PCI/USB, temperatures, battery            |
-| 03  | `03_storage.txt`         | Disks, df, inodes, fdisk, SMART                                 |
-| 04  | `04_graphics.txt`        | GPU, displays (Wayland/X11), DRM/KMS, OpenGL                    |
-| 05  | `05_network.txt`         | IP, routes, DNS, ports, NetworkManager (**sensitive**)          |
-| 06  | `06_packages.txt`        | pacman (explicit/AUR), flatpak, pipx, modules                   |
-| 07  | `07_logs.txt`            | dmesg, journalctl, failed services                              |
-| 08  | `08_configuration.txt`   | fstab, pacman.conf, mkinitcpio, grub, modprobe, udev (**sensitive**) |
-| 09  | `09_users.txt`           | Accounts, groups, recent logins, auth logs                      |
+| No  | File                   | Contents                                                             |
+| --- | ---------------------- | -------------------------------------------------------------------- |
+| 00  | `00_privacy.txt`       | Privacy notice (read before sharing)                                 |
+| 01  | `01_system.txt`        | Kernel, distribution, boot time, session                             |
+| 02  | `02_hardware.txt`      | CPU, RAM (dmidecode), PCI/USB, temperatures, battery                 |
+| 03  | `03_storage.txt`       | Disks, df, inodes, fdisk, SMART                                      |
+| 04  | `04_graphics.txt`      | GPU, displays (Wayland/X11), DRM/KMS, OpenGL                         |
+| 05  | `05_network.txt`       | IP, routes, DNS, ports, NetworkManager (**sensitive**)               |
+| 06  | `06_packages.txt`      | pacman (explicit/AUR), flatpak, pipx, modules                        |
+| 07  | `07_logs.txt`          | dmesg, journalctl, failed services                                   |
+| 08  | `08_configuration.txt` | fstab, pacman.conf, mkinitcpio, grub, modprobe, udev (**sensitive**) |
+| 09  | `09_users.txt`         | Accounts, groups, recent logins, auth logs                           |
 
 ## Report folder contents
 
@@ -214,20 +213,16 @@ systemReport/
 ├── 01_system.txt
 ├── ...
 ├── arch_full_report.txt    # everything merged + table of contents
-├── terminal_log.txt        # terminal output (ANSI stripped)
-└── VERSION.txt             # version, version date, author, collected time,
-                            #   host, kernel, repo commit
+└── terminal_log.txt        # version, author, host and kernel appear first
 ```
 
 ## Version history
 
-| Version   | Date        | Notes                                                                                                                                   |
-| --------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| **5.0.2** | 2026-10-01 | First full round of machine testing. Fixed: a stray trailing comma in the `--only` echo line, the same-timestamp warning printed before the path block instead of after it, and the `~`-in-`config` path pitfall now documented. |
-| **5.0.1** | 2026-10-01 | Terminal log written inside each report again, with version and author in its header. Log directory created automatically. A shared fixed-path log is still available by setting `LOG_FILE`. |
-| **5.0.0** | 2026-10-01 | Full English rewrite. Settings, code and output are English only. The template file is gone — `config` is tracked directly. Output root falls back to a home-directory backup. Rules are 2–3 lines tall. Keep count default 10. Author credit added. |
-| **4.0.0** | 2026-10-01 | Full modular rewrite. XDG-aware output root, terminal log added, `--only` filter, keep-last-N protection, `VERSION.txt`.         |
-| **3.1**   | 2026-08-11 | Previous version (single file, `--nosudo`, `--noclean`, old folders deleted without asking).                                            |
+- **5.0.2** (2026-10-01) — First full round of machine testing. Fixed: a stray trailing comma in the `--only` echo line, the same-timestamp warning printed before the path block instead of after it, and the `~`-in-`config` path pitfall now documented.
+- **5.0.1** (2026-10-01) — Terminal log written inside each report again, with version and author in its header. Log directory created automatically. A shared fixed-path log is still available by setting `LOG_FILE`.
+- **5.0.0** (2026-10-01) — Full English rewrite. Settings, code and output are English only. The template file is gone — `config` is tracked directly. Output root falls back to a home-directory backup. Rules are 2–3 lines tall. Keep count default 10. Author credit added.
+- **4.0.0** (2026-10-01) — Full modular rewrite. XDG-aware output root, terminal log added, `--only` filter, keep-last-N protection, `VERSION.txt`.
+- **3.1** (2026-08-11) — Previous version (single file, `--nosudo`, `--noclean`, old folders deleted without asking).
 
 ## Deliberate non-goals
 

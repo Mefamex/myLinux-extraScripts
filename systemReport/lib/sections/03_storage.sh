@@ -46,10 +46,17 @@ section_03() {
 			if sudo_ready; then
 				# -H asks for the overall health verdict only. The
 				# full SMART data (percentage used, media errors) would
-				# inflate the report considerably.
-				sudo -n smartctl -H "$drive" 2>/dev/null |
-					grep -iE 'result|overall-health' ||
-					printf 'SMART data could not be read.\n'
+				# inflate the report considerably. smartctl's exit code
+				# is checked before the filter, so a disk that simply
+				# has no health line is not reported as unreadable.
+				if _smart="$(sudo -n smartctl -H "$drive" 2>/dev/null)"; then
+					printf '%s\n' "$_smart" |
+						grep -iE 'result|overall-health' ||
+						printf 'no SMART health line for %s.\n' "$drive"
+				else
+					printf 'SMART data could not be read for %s.\n' "$drive"
+				fi
+				unset _smart
 			else
 				note_skipped_privileged "SMART ($drive)"
 			fi

@@ -15,7 +15,15 @@
 
 section_04() {
 	printf -- '\n\n\n--- GPU Drivers ---\n\n'
-	lspci -k 2>/dev/null | grep -A 2 -E '(VGA|3D|Display)' || echo 'lspci could not run.'
+	# lspci's exit code is checked first. Reading it from the grep step would
+	# report "could not run" on a machine with no matching adapter.
+	if _gpu="$(lspci -k 2>/dev/null)"; then
+		printf '%s\n' "$_gpu" | grep -A 2 -E '(VGA|3D|Display)' ||
+			printf 'no VGA/3D/Display adapter found by lspci.\n'
+	else
+		printf 'lspci could not run.\n'
+	fi
+	unset _gpu
 
 	printf '\n\n\n--- NVIDIA Status ---\n\n'
 	if command -v nvidia-smi >/dev/null 2>&1; then
@@ -82,8 +90,14 @@ section_04() {
 		glxinfo -B 2>/dev/null || printf 'glxinfo could not run.\n'
 	elif command -v eglinfo >/dev/null 2>&1; then
 		# In a Wayland session there is no X11, so EGL is the more
-		# accurate answer.
-		eglinfo -B 2>/dev/null | head -n 20 || printf 'eglinfo could not run.\n'
+		# accurate answer. As above, eglinfo's own exit code decides the
+		# message; `eglinfo | head` would always look successful.
+		if _egl="$(eglinfo -B 2>/dev/null)"; then
+			printf '%s\n' "$_egl" | head -n 20
+		else
+			printf 'eglinfo could not run.\n'
+		fi
+		unset _egl
 	else
 		printf 'neither glxinfo (mesa-utils) nor eglinfo found.\n'
 	fi

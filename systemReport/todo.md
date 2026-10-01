@@ -21,7 +21,7 @@
 # shellcheck   clean (`shellcheck -x systemReport.sh lib/*.sh lib/sections/*.sh`)
 # syntax       clean (`bash -n` on all 18 shell files)
 # language     English only, by decision (see Notes)
-# tracked      VERSION, config, README.md, todo.md, .gitignore, lib/**
+# tracked      VERSION, config, README.md, todo.md, lib/**
 # committed    a304b4f (code + READMEs), 39bbcfb (this file)
 
 
@@ -41,7 +41,7 @@
 - [x] `VERSION` file is the only place a version number exists
       (`VERSION`, `VERSION_DATE`, `AUTHOR`).
 - [x] Version reaches: banner, `--version`, every section header, the combined
-      report, `VERSION.txt`, the terminal log header, and the final summary.
+      report, the terminal log header, and the final summary.
 - [x] `VERSION_INFO` is the display form, `5.0.2 (2026-10-01)`.
 - [x] Bump rules documented in the file itself.
 

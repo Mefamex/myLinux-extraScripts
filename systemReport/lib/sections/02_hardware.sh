@@ -23,9 +23,17 @@ section_02() {
 	if ! command -v dmidecode >/dev/null 2>&1; then
 		printf 'dmidecode not installed (package: dmidecode).\n'
 	elif sudo_ready; then
-		sudo -n dmidecode -t memory 2>/dev/null |
-			grep -E 'Size:|Type:|Speed:|Manufacturer:|Locator:|Part Number:' ||
+		# dmidecode's own exit code is what says whether it ran. The grep
+		# filter is applied afterwards, so "dmidecode could not run" is not
+		# printed merely because no line matched the filter.
+		if _dmi="$(sudo -n dmidecode -t memory 2>/dev/null)"; then
+			printf '%s\n' "$_dmi" |
+				grep -E 'Size:|Type:|Speed:|Manufacturer:|Locator:|Part Number:' ||
+				printf 'dmidecode returned no memory slot data.\n'
+		else
 			printf 'dmidecode could not run.\n'
+		fi
+		unset _dmi
 	else
 		note_skipped_privileged 'dmidecode (RAM slot details)'
 	fi

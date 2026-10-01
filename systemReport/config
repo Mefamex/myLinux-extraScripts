@@ -1,126 +1,16 @@
-# =============================================================================
-# systemReport — settings
-#
-# Written and maintained by @mefamex.
-# =============================================================================
-#
-# Read by systemReport.sh. This file IS tracked in the repository on purpose:
-# the defaults live here, so a fresh clone is immediately runnable and a
-# reviewer can see the shipped settings.
-#
-# Precedence, strongest first:
-#   1. command-line arguments   (./systemReport.sh --keep 20 --nosudo)
-#   2. environment variables    (SR_KEEP=20 ./systemReport.sh)
-#   3. this file
-#
-# A `#` at the start of a line, or after a value, is a comment. Every setting
-# you leave out or leave empty falls back to the built-in default shown here.
-# Two or three rule lines separate the blocks, so a setting is easy to find by
-# scrolling rather than by searching.
+# systemReport settings. CLI arguments override these values.
 
+# Parent directory for arch_report_YYYYMMDD_HHMMSS folders.
+REPORT_ROOT="$HOME/Belgeler/systemReport"
 
-# -----------------------------------------------------------------------------
-# REPORT_ROOT — where report folders are created
-# -----------------------------------------------------------------------------
-# The PARENT directory that holds the report folders, not a full report path.
-# Each run opens a new <REPORT_ROOT>/arch_report_YYYYMMDD_HHMMSS/ folder.
-#
-# Leave it empty and the script picks a location itself, first hit wins:
-#   1. xdg-user-dir DOCUMENTS    honours your localised Documents folder
-#   2. XDG_DOCUMENTS_DIR        read straight from ~/.config/user-dirs.dirs
-#   3. ~/Documents, ~/Document  plain English names
-#   4. ~/systemReport           backup inside your home directory
-#   5. ~/.local/share/systemReport   last resort, exists on every account
-#
-# No localised name such as "Belgeler" or "Dokumente" is hardcoded anywhere in
-# the script, so this also works on another machine without editing it. The
-# resolved path is printed at startup, so you can always see where reports
-# went.
-#
-# An absolute path is strongly recommended. A relative path is resolved against
-# your home directory, so it means the same thing wherever you run the script.
-#
-# Write $HOME, not ~. A tilde is expanded by the shell when you type it as an
-# argument, but this file is sourced, and a quoted "~" stays a literal tilde
-# character:
-#   REPORT_ROOT="~/Documents/systemReport"  ->  $HOME/~/Documents/systemReport
-#   REPORT_ROOT="$HOME/Documents/systemReport"  ->  correct
-#REPORT_ROOT="$HOME/systemReport"
+# Number of newest reports to keep; older reports are removed.
+KEEP_REPORTS=20
 
-
-# -----------------------------------------------------------------------------
-# KEEP_REPORTS — how many reports to keep
-# -----------------------------------------------------------------------------
-# Once more than this many report folders exist, the oldest ones are deleted
-# without asking (and printing exactly what it deleted). Set 1 to keep only the
-# report you just made, or 0 to keep none at all.
-#
-# 10 is the default: roughly a week of reports if you collect once a day, which
-# is usually enough to spot a regression without letting the folder grow
-# without bound.
-KEEP_REPORTS=10
-
-
-# -----------------------------------------------------------------------------
-# USE_SUDO_CHECKS — checks that need root
-# -----------------------------------------------------------------------------
-# 1 = run dmidecode, fdisk, smartctl, dmesg and efibootmgr.
-#     Your password is asked for ONCE (sudo -v); every later sudo call in the
-#     run reuses that timestamp and never prompts again.
-# 0 = skip those five checks and write a "skipped (needs root)" note in their
-#     place, so the report shows what is missing instead of silently omitting
-#     it.
-#
-# If you mistype the password the script does NOT abort. It carries on
-# unprivileged: a partial report is more useful than no report.
+# Run checks that need sudo (1=yes, 0=no).
 USE_SUDO_CHECKS=1
 
-
-# -----------------------------------------------------------------------------
-# CLEANUP_ENABLED — deleting old reports
-# -----------------------------------------------------------------------------
-# 1 = delete report folders beyond KEEP_REPORTS.
-# 0 = touch nothing. (--noclean sets the same thing for one run.)
-#
-# Only folders this tool created are ever considered, and the folder belonging
-# to the current run is never a candidate.
+# Remove reports older than KEEP_REPORTS (1=yes, 0=no).
 CLEANUP_ENABLED=1
 
-
-# -----------------------------------------------------------------------------
-# LOG_FILE — terminal log
-# -----------------------------------------------------------------------------
-# Every line printed to the terminal is also written here, without ANSI colour
-# codes, so the log stays greppable and safe to paste into a bug report.
-#
-# The path below is left EMPTY on purpose, and that is the setting you want:
-# the log is written inside each report, next to the files it describes.
-#
-#   ~/Belgeler/systemReport/arch_report_20261001_195437/
-#   ├── 00_privacy.txt
-#   ├── ...
-#   ├── arch_full_report.txt
-#   ├── terminal_log.txt      <-- this run's terminal output, ANSI stripped
-#   └── VERSION.txt
-#
-# Every report therefore carries its own complete terminal output: you can zip
-# one folder and hand it over, and nothing from another run is mixed in. The
-# folder name is not knowable in advance, so the script fills it in.
+# Empty means terminal_log.txt is written inside each report folder.
 LOG_FILE=""
-#
-# Only change this if you want ONE shared log for the whole machine instead of
-# one per report. A fixed path is appended to on every run, and the script
-# creates the directory if it does not exist:
-#   LOG_FILE="$HOME/Belgeler/systemReport/terminal_log.txt"  # report root
-#   LOG_FILE="$HOME/Documents/systemReport/terminal_log.txt" # English Documents
-#   LOG_FILE="$HOME/systemReport/logs/terminal.log"          # separate log folder
-#   LOG_FILE="$HOME/systemReport.log"                        # plain file in $HOME
-#   LOG_FILE="/var/log/systemReport.log"                     # system-wide, needs root
-#
-# Those are examples only, none of them is active. With the empty value above,
-# no path here is used.
-
-
-# =============================================================================
-# end of settings
-# =============================================================================

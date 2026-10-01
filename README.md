@@ -43,9 +43,12 @@ Arch Linux system and app updater, replacing the old `fullupdate` shell function
   - [systemUpdate.sh](systemUpdate/systemUpdate.sh) — Main script. Flags: `--system` (pacman/AUR/firmware/DKMS/.pacnew), `--apps` (npm/VS Code/pipx/uv/... channels, numbered `[i/total]`), `--status` (changes nothing, only reports), `--log`, `--help`.
   - [lib/](systemUpdate/lib/) — Infrastructure modules (`config.sh` settings, `log.sh` FIFO+tee logging and log pruning, `system.sh` the 5-step system update and reboot detection, `status.sh` the read-only report, `apps.sh` the channel table).
   - `config` — Settings (`LOG_DIR`, `LOG_KEEP`, `SKIP_CHANNELS`, `GO_BIN_DIR`, `STATUS_AUR`). Lives **next to the script** and is tracked in the repository — every line is commented out, so a fresh clone runs as-is. No template file.
-  - [README.md](systemUpdate/README.md) — Usage, channel table, safety rules, settings and troubleshooting.
+  - [README.md](systemUpdate/README.md) — Installation, channel table, safety rules, settings and troubleshooting.
+  - [TODO.md](systemUpdate/TODO.md) — Open work, notes on how things work, and the reasoning behind the measured fixes.
 
-  Nothing destructive: no `docker system prune`, no `brew cleanup`, and `.pacnew` files are only ever listed, never deleted. `brew` is excluded on purpose.
+  Nothing destructive: no `docker system prune`, no `brew cleanup`, and `.pacnew` files are only ever listed, never deleted. `brew` is excluded on purpose. Reports are never truncated — every channel prints what would actually change.
+
+  Logs use a Documents-aware cascade like `systemReport`: `~/Belgeler/systemUpdate` (localized Documents) → `~/Documents/systemUpdate` → `~/systemUpdate` → `~/.local/state/systemUpdate` (last resort). Set `LOG_DIR` to override.
 
 ### [systemReport](systemReport/)
 Arch Linux system report collector. Collects hardware, network, packages, logs and configuration, modularly. **Written by @mefamex.** Code, settings, output labels and its own README are English only.
