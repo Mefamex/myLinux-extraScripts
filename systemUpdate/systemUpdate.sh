@@ -131,6 +131,9 @@ _latest_log() {
 }
 
 if [ "$SCOPE" = "log" ]; then
+	# resolve_log_dir populates LOG_DIR via the cascade; without it LOG_DIR is
+	# empty and _latest_log matches "/*.txt" against the whole filesystem.
+	resolve_log_dir || exit 1
 	f=$(_latest_log)
 	if [ -n "$f" ]; then
 		printf 'latest log: %s\n\n' "$f"

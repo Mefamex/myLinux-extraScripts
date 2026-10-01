@@ -51,19 +51,21 @@ config_load() {
 	# LOG_DIR is intentionally left empty here. When empty, log_open() resolves
 	# it via a cascade (see lib/log.sh resolve_log_dir()):
 	#   1. xdg-user-dir DOCUMENTS       -> localized "Documents" (e.g. Belgeler)
-	#   2. ~/.config/user-dirs.dirs     -> XDG_DOCUMENTS_DIR
-	#   3. English names                -> $HOME/Documents, $HOME/Document
-	#   4. Home backup (not hidden)     -> $HOME/systemUpdate
-	#   5. XDG state dir (last resort)  -> ${XDG_STATE_HOME:-$HOME/.local/state}/systemUpdate
+	#   2. English names                -> $HOME/Documents, $HOME/Document
+	#   3. Home backup (not hidden)     -> $HOME/systemUpdate
+	#   4. XDG state dir (last resort)  -> ${XDG_STATE_HOME:-$HOME/.local/state}/systemUpdate
 	#
+	# Only SYSUPDATE_* env vars are read; bare LOG_DIR/LOG_KEEP/etc. from the
+	# user's shell are ignored to avoid accidental overrides.
 	# shellcheck disable=SC2034  # LOG_DIR is read in lib/log.sh
-	LOG_DIR="${SYSUPDATE_LOG_DIR:-${LOG_DIR:-}}"
+	LOG_DIR="${SYSUPDATE_LOG_DIR:-}"
 	# shellcheck disable=SC2034  # SKIP_CHANNELS is read in lib/apps.sh
-	SKIP_CHANNELS="${SYSUPDATE_SKIP_CHANNELS:-${SKIP_CHANNELS:-}}"
+	SKIP_CHANNELS="${SYSUPDATE_SKIP_CHANNELS:-}"
 	# shellcheck disable=SC2034  # GO_BIN_DIR is read in lib/apps.sh
-	GO_BIN_DIR="${SYSUPDATE_GO_BIN_DIR:-${GO_BIN_DIR:-$HOME/go/bin}}"
+	# GO_BIN_DIR: default from go env, so a custom GOBIN or GOPATH is respected.
+	GO_BIN_DIR="${SYSUPDATE_GO_BIN_DIR:-$(go env GOBIN 2>/dev/null || printf '%s/bin' "$(go env GOPATH 2>/dev/null || echo "$HOME/go")")}"
 	# shellcheck disable=SC2034  # LOG_KEEP is read in lib/log.sh
-	LOG_KEEP="${SYSUPDATE_LOG_KEEP:-${LOG_KEEP:-50}}"
+	LOG_KEEP="${SYSUPDATE_LOG_KEEP:-50}"
 	# shellcheck disable=SC2034  # STATUS_AUR is read in lib/status.sh
-	STATUS_AUR="${SYSUPDATE_STATUS_AUR:-${STATUS_AUR:-0}}"
+	STATUS_AUR="${SYSUPDATE_STATUS_AUR:-0}"
 }

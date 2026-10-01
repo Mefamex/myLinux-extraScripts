@@ -11,7 +11,7 @@
 
 # system_status  →  read-only summary of the system side
 system_status() {
-	local out n rc
+	local out n rc=0
 
 	section "System: pending package updates"
 	# `pacman -Qu` is MISLEADING: it only reflects the last sync, so a stale
@@ -44,17 +44,19 @@ system_status() {
 	# machine), so only rc=0 is meaningful.
 	if ! command -v fwupdmgr >/dev/null 2>&1; then
 		info "fwupd is not installed"
-	elif out=$(fwupdmgr get-updates 2>&1); then
-		rc=0
 	else
-		rc=$?
-	fi
-	if [ "$rc" -eq 2 ]; then
-		info "current (no update available)"
-	elif [ "$rc" -eq 0 ]; then
-		printf '%s\n' "$out" | sed 's/^/      /'
-	else
-		warn "could not query firmware (rc=$rc)"
+		if out=$(fwupdmgr get-updates 2>&1); then
+			rc=0
+		else
+			rc=$?
+		fi
+		if [ "$rc" -eq 2 ]; then
+			info "current (no update available)"
+		elif [ "$rc" -eq 0 ]; then
+			printf '%s\n' "$out" | sed 's/^/      /'
+		else
+			warn "could not query firmware (rc=$rc)"
+		fi
 	fi
 
 	section "System: DKMS modules"

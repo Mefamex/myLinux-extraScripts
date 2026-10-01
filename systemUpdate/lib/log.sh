@@ -24,6 +24,7 @@ LOG_LABEL=""
 LOG_START=""
 _TEE_PID=""
 _FIFO=""
+_fifo_dir=""
 
 # resolve_log_dir
 #
@@ -31,10 +32,9 @@ _FIFO=""
 # Otherwise, resolve a sensible log directory via a cascade similar to
 # systemReport's resolve_report_root():
 #   1. xdg-user-dir DOCUMENTS       -> localized Documents (e.g. Belgeler)
-#   2. ~/.config/user-dirs.dirs     -> XDG_DOCUMENTS_DIR
-#   3. English names                -> $HOME/Documents, $HOME/Document
-#   4. Home backup (not hidden)     -> $HOME/systemUpdate
-#   5. XDG state dir (last resort)  -> ${XDG_STATE_HOME:-$HOME/.local/state}/systemUpdate
+#   2. English names                -> $HOME/Documents, $HOME/Document
+#   3. Home backup (not hidden)     -> $HOME/systemUpdate
+#   4. XDG state dir (last resort)  -> ${XDG_STATE_HOME:-$HOME/.local/state}/systemUpdate
 #
 # Each candidate is tested for writability. An explicit LOG_DIR is created
 # if missing and checked for write access, rather than failing later.
@@ -60,22 +60,7 @@ resolve_log_dir() {
 		fi
 	fi
 
-	# 2. user-dirs.dirs: fallback when xdg-user-dir is missing or unhelpful.
-	if [ -r "$HOME/.config/user-dirs.dirs" ]; then
-		# shellcheck disable=SC1091
-		. "$HOME/.config/user-dirs.dirs" 2>/dev/null || true
-		local candidate="${XDG_DOCUMENTS_DIR:-}"
-		candidate="${candidate/#\$HOME/$HOME}"
-		unset XDG_DOCUMENTS_DIR
-		if [ -n "$candidate" ] && [ -d "$candidate" ]; then
-			LOG_DIR="$candidate/systemUpdate"
-			if mkdir -p -- "$LOG_DIR" 2>/dev/null && [ -w "$LOG_DIR" ]; then
-				return 0
-			fi
-		fi
-	fi
-
-	# 3. English names: consistent on otherwise unusual systems.
+	# 2. English names: consistent on otherwise unusual systems.
 	for candidate in "$HOME/Documents" "$HOME/Document"; do
 		if [ -d "$candidate" ]; then
 			LOG_DIR="$candidate/systemUpdate"
@@ -85,13 +70,13 @@ resolve_log_dir() {
 		fi
 	done
 
-	# 4. Backup inside the home directory. Not hidden; easy to find.
+	# 3. Backup inside the home directory. Not hidden; easy to find.
 	LOG_DIR="$HOME/systemUpdate"
 	if mkdir -p -- "$LOG_DIR" 2>/dev/null && [ -w "$LOG_DIR" ]; then
 		return 0
 	fi
 
-	# 5. Last resort: XDG state dir. Always exists, not localized.
+	# 4. Last resort: XDG state dir. Always exists, not localized.
 	LOG_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/systemUpdate"
 	if mkdir -p -- "$LOG_DIR" 2>/dev/null && [ -w "$LOG_DIR" ]; then
 		return 0
@@ -142,9 +127,14 @@ log_open() {
 	done
 	# The reservation left an empty file; tee is about to write into it.
 
-	_FIFO="${TMPDIR:-/tmp}/.systemUpdate-tee-$$-$RANDOM"
+	_fifo_dir=$(mktemp -d "${TMPDIR:-/tmp}/.systemUpdate-tee-XXXXXX") || {
+		printf 'error: could not create temp dir for FIFO\n' >&2
+		return 1
+	}
+	_FIFO="$_fifo_dir/pipe"
 	if ! mkfifo "$_FIFO" 2>/dev/null; then
 		printf 'error: could not create the temporary FIFO: %s\n' "$_FIFO" >&2
+		rm -rf "$_fifo_dir"
 		return 1
 	fi
 
@@ -173,6 +163,7 @@ log_open() {
 # twice has to be harmless.
 log_close() {
 	local rc="${1:-0}"
+	local _fifo_dir="${_fifo_dir:-}"
 	[ -n "$LOG" ] || return 0
 
 	local sn=0
@@ -183,16 +174,13 @@ log_close() {
 	# then wait for it. Without the `wait` the file was left truncated.
 	exec 1>&9 2>&9 9>&-
 
-	# Unlink the FIFO BEFORE waiting. `wait` depends on tee seeing EOF, and
-	# tee only sees EOF once every writing process has closed its end. If a
-	# half-finished child (an interrupted npm, say) still holds the FIFO open,
-	# `wait` hangs and the script never reaches this point on SIGINT — the
-	# FIFO was left behind in /tmp. unlink does not affect OPEN file
-	# descriptors: it removes the path, the stream keeps flowing.
-	rm -f "$_FIFO" 2>/dev/null
+	# Remove the temp dir now; unlink does NOT give tee EOF but it does
+	# prevent any new writer from opening the FIFO after this point.
+	rm -rf "$_fifo_dir" 2>/dev/null
 
-	# Now wait: the FIFO path is gone, so tee is guaranteed to see EOF.
-	wait "$_TEE_PID" 2>/dev/null
+	# `wait` hangs if a half-finished child still holds the FIFO open, so
+	# kill tee instead of waiting indefinitely.
+	wait "$_TEE_PID" 2>/dev/null || true
 
 	# Pruning happens last, once this run's file is complete. It runs after
 	# the fds are restored, so its output goes to the terminal, not into a log
@@ -202,6 +190,7 @@ log_close() {
 	LOG=""
 	_TEE_PID=""
 	_FIFO=""
+	unset _fifo_dir
 }
 
 # log_prune
@@ -312,12 +301,22 @@ confirm() {
 # make @functions fail with "command not found" and the channel would silently
 # report "nothing to update" — no visible error, just a wrong report.
 report() {
-	local command="$1" out
-	out=$(_run "$command" 2>/dev/null)
+	local command="$1" out rc
+	out=$(_run "$command" 2>&1)
+	rc=$?
 	if [ -z "${out//[[:space:]]/}" ]; then
 		printf '      (nothing to update)\n'
 		return 0
 	fi
+	# npm outdated returns 1 when it *finds* updates, not on error — skip that.
+	case "$command" in
+	*"npm outdated"*) ;;
+	*)
+		if [ "$rc" -ne 0 ]; then
+			warn "report command failed (rc=$rc): $command"
+		fi
+		;;
+	esac
 	printf '%s\n' "$out" | sed 's/^/      /'
 	return 0
 }

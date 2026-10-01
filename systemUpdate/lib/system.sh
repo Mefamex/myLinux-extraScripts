@@ -171,8 +171,10 @@ _kernel_packages() {
 	[ -n "$candidates" ] || return 0
 
 	for pkg in $candidates; do
-		pacman -Ql "$pkg" 2>/dev/null | awk '{print $2}' |
-			grep -q "^/usr/lib/modules/[^/]*/kernel/" || continue
+		# Do not use grep -q here: with pipefail, grep can exit early and
+		# SIGPIPE the awk process, making || continue trigger incorrectly.
+		pacman -Ql "$pkg" 2>/dev/null |
+			awk '$2 ~ "^/usr/lib/modules/[^/]+/kernel/" { found=1 } END { exit !found }' || continue
 		version=$(pacman -Q "$pkg" 2>/dev/null | awk '{print $2}')
 		printf '%s %s\n' "$pkg" "$version"
 	done

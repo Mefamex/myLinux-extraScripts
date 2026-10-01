@@ -246,6 +246,27 @@ _upd_go() {
 	return 0
 }
 
+# _run_tty <command-or-@function>
+#
+# Run an update command with stdout/stderr attached to the user's terminal so
+# progress bars and prompts from npm/pip/uv/go are visible. Crucially, it keeps
+# the FIFO write end open on fd 3/4, otherwise tee would see EOF, exit, and the
+# script would block forever when it later tries to reopen the FIFO.
+#
+# The trade-off is that the update output does NOT go through tee during the
+# update itself, so it is missing from the log file. That is acceptable here:
+# the "report" lines before every update say what is about to change, and the
+# log records every channel boundary, so the log still tells the whole story.
+_run_tty() {
+	local rc
+	exec 3>&1 4>&2
+	exec 1>&9 2>&9
+	_run "$1"
+	rc=$?
+	exec 1>&3 2>&4 3>&- 4>&-
+	return "$rc"
+}
+
 # --- main flow ------------------------------------------------------------
 
 apps_update() {
@@ -290,10 +311,11 @@ apps_update() {
 
 		# Skip confirm for remaining channels when update_all is set.
 		if [ "$update_all" -eq 1 ]; then
-			exec 1>&9 2>&9
-			_run "$update_command"
-			exec >"$_FIFO" 2>&1
-			updated=$((updated + 1))
+			if _run_tty "$update_command"; then
+				updated=$((updated + 1))
+			else
+				warn "update failed: $update_command"
+			fi
 			continue
 		fi
 
@@ -313,16 +335,13 @@ apps_update() {
 			;;
 		esac
 
-		# Temporarily restore stdout/stderr to terminal so the update command
-		# shows real-time progress (npm, pip, uv, go install all hide output
-		# when they detect no TTY). fd 9 is the saved original terminal from
-		# log_open(), so writing to it goes to both screen and tee→log.
-		exec 1>&9 2>&9
-		_run "$update_command"
-		# Back to FIFO for subsequent logging.
-		exec >"$_FIFO" 2>&1
-
-		updated=$((updated + 1))
+		# Run the update with terminal output visible. fd 3/4 keep the FIFO write
+		# end open so tee does not see EOF and exit.
+		if _run_tty "$update_command"; then
+			updated=$((updated + 1))
+		else
+			warn "update failed: $update_command"
+		fi
 	done
 
 	# Process deferred channels last, one by one.
@@ -331,11 +350,18 @@ apps_update() {
 		IFS='|' read -r id label present report_command update_command <<<"$line"
 		printf '\n  [deferred] %s — %s\n' "$id" "$label"
 		report "$report_command"
-		confirm "Update $label?" || continue
-		exec 1>&9 2>&9
-		_run "$update_command"
-		exec >"$_FIFO" 2>&1
-		updated=$((updated + 1))
+		confirm "Update $label?"
+		case $? in
+		0) ;;
+		1 | 2) continue ;;
+		3) update_all=1 ;;
+		4) return 0 ;;
+		esac
+		if _run_tty "$update_command"; then
+			updated=$((updated + 1))
+		else
+			warn "update failed: $update_command"
+		fi
 	done
 
 	printf '\n================================\n'
