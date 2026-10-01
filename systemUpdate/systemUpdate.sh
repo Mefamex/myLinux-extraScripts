@@ -8,6 +8,8 @@
 #   ./systemUpdate.sh --status   CHANGES NOTHING, reports only
 #   ./systemUpdate.sh --log      show the most recent log
 #   ./systemUpdate.sh --full     UPDATE EVERYTHING, ask no confirmations
+#   ./systemUpdate.sh --full --apps  only app channels, no questions
+#   ./systemUpdate.sh --full --system  only system steps, no questions
 #   ./systemUpdate.sh --help
 #
 # The full stdout + stderr of every run is written to one file.
@@ -96,7 +98,6 @@ for arg in "$@"; do
 	# not-installed channels; it only skips the [y/N] confirmations.
 	--full)
 		FULL_AUTO=1
-		SCOPE="all"
 		;;
 	-h | --help)
 		# Print only the leading comment block (up to the first non-comment
