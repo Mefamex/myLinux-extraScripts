@@ -8,12 +8,7 @@ Arch Linux system report collector — modular, readable, careful.
 > | *version*        | 5.0.2                    |
 > | *version date*   | 2026-10-01               |
 > | *platform*       | Arch Linux (x86_64)      |
-> | *language*       | English only, by design |
 
-Written and maintained by **@mefamex**. Every comment, setting name, output
-label and document in this tool is English. Nothing is localised on purpose: the
-same script produces the same output on any machine regardless of locale, which
-also means reports are comparable between machines.
 
 ## Purpose
 
