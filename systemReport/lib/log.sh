@@ -37,6 +37,12 @@ RULE_WIDTH=64
 
 timestamp() { date '+%Y-%m-%d %H:%M:%S'; }
 
+# Remove ANSI colour sequences emitted by external commands before their output
+# is written into a report file.
+strip_ansi() {
+	sed -E $'s/\033\\[[0-9;]*m//g'
+}
+
 # Build a rule of a given width without printing '-' in a loop.
 #
 # `printf '%*s' N ''` pads an empty string to N columns; tr then swaps every
@@ -62,7 +68,7 @@ rule() {
 	local line
 	line="$(rule_line "$RULE_WIDTH" "$char")"
 	for ((i = 0; i < lines; i++)); do
-		printf '%s%s%s\n' "$color" "$line" "$C_RESET"
+		printf '%s%s%s\n' "$color" "$line" "${color:+$C_RESET}"
 	done
 	return 0
 }
@@ -75,7 +81,7 @@ rule() {
 _emit() {
 	local color="$1"
 	shift
-	printf '%s%s%s\n' "$color" "$*" "$C_RESET"
+	printf '%s%s%s\n' "$color" "$*" "${color:+$C_RESET}"
 	if [ -n "${LOG_FILE:-}" ] && [ -w "${LOG_FILE:-/nonexistent}" ]; then
 		printf '%s\n' "$*" >>"$LOG_FILE" 2>/dev/null ||
 			true
