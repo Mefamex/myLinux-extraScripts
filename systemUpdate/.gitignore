@@ -1,3 +1,0 @@
-# Temporary FIFOs live in TMPDIR while the script runs and are normally
-# removed. They can survive a SIGKILL.
-.systemUpdate-tee-*

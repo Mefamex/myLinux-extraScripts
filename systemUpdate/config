@@ -1,19 +1,18 @@
-# systemUpdate — settings (tracked in git, all commented = defaults)
+# systemUpdate — settings (tracked in git)
 # Precedence: env > this file > built-in defaults
-# Uncomment to change. For personal-only values, use env instead.
 
-# LOG_DIR — log directory (empty = auto cascade: Belgeler/ → Documents/ → ~/systemUpdate/ → ~/.local/state/systemUpdate)
-#LOG_DIR=""
+# Log directory (empty = auto: xdg-user-dir DOCUMENTS → ~/systemUpdate → ~/.local/state/systemUpdate)
+LOG_DIR="$HOME/Belgeler/systemUpdate"
 
-# LOG_KEEP — how many log files to keep (non-numeric = keep all, typo-safe)
-#LOG_KEEP=50
+# How many log files to keep
+LOG_KEEP=50
 
-# SKIP_CHANNELS — never ask about these (space-separated)
+# Channels to never ask about (space-separated)
 # Valid: npm code pipx uv opencode claude codex pnpm pip go cargo docker flatpak dotnet composer gh
-#SKIP_CHANNELS=""
+SKIP_CHANNELS=""
 
-# GO_BIN_DIR — where go install puts binaries
-#GO_BIN_DIR="$HOME/go/bin"
+# Where go install puts binaries
+GO_BIN_DIR="$HOME/go/bin"
 
-# STATUS_AUR — also query AUR in --status (1 = yes, needs network)
-#STATUS_AUR=0
+# Also query AUR in --status (1 = yes, needs network)
+STATUS_AUR=0
