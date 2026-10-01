@@ -1,0 +1,16 @@
+# VERSION — single source of truth for the script version and its release date.
+#
+# Sourced by lib/version.sh, and greppable without being sourced, so this is
+# the only place a version number is ever written down.
+#
+# Bump rules:
+#   patch   maintenance only, collected report content stays the same
+#   minor   new section, new flag, or new output file
+#   major   report format or output directory layout changed
+#
+# VERSION_DATE must be bumped on every change, including pure code fixes.
+# It is not "today": it is the date the version was last modified.
+
+VERSION="5.0.2"
+VERSION_DATE="2026-10-01"
+AUTHOR="@mefamex"
