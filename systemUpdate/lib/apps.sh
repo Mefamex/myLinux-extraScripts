@@ -288,7 +288,16 @@ apps_update() {
 		[ -n "$update_command" ] || continue
 
 		confirm "Update $label?" || continue
+
+		# Temporarily restore stdout/stderr to terminal so the update command
+		# shows real-time progress (npm, pip, uv, go install all hide output
+		# when they detect no TTY). fd 9 is the saved original terminal from
+		# log_open(), so writing to it goes to both screen and tee→log.
+		exec 1>&9 2>&9
 		_run "$update_command"
+		# Back to FIFO for subsequent logging.
+		exec >"$_FIFO" 2>&1
+
 		updated=$((updated + 1))
 	done
 
