@@ -41,10 +41,16 @@ fails the run.
 ./systemUpdate.sh            # system + apps (everything)
 ./systemUpdate.sh --system   # only pacman/AUR/firmware/DKMS/.pacnew
 ./systemUpdate.sh --apps     # only npm/VS Code/pipx/uv/... channels
-./systemUpdate.sh --status  # changes NOTHING, only reports
+./systemUpdate.sh --status  # read-only: writes log files, changes nothing
 ./systemUpdate.sh --log     # show the most recent log
+./systemUpdate.sh --full    # update everything without asking (see note below)
 ./systemUpdate.sh --help
 ```
+
+**Note on `--full`:** it skips the tool's own confirmation prompts, but
+`pacman -Syu` / `yay -Syu` still ask `[Y/n]`, and `sudo` still asks for your
+password. For fully non-interactive use, configure passwordless sudo or run
+interactively once to cache credentials.
 
 The full output (stdout **and** stderr) of every run is written to exactly
 one file:
@@ -63,10 +69,9 @@ By default, the script uses the first writable directory in this cascade:
 
 1. **Your localized Documents folder** — via `xdg-user-dir DOCUMENTS`. On a
    Turkish system this is `~/Belgeler/systemUpdate`; on English `~/Documents/systemUpdate`.
-2. **XDG user-dirs config** — `~/.config/user-dirs.dirs` → `XDG_DOCUMENTS_DIR`.
-3. **English fallback** — `~/Documents/systemUpdate` or `~/Document/systemUpdate`.
-4. **Home backup** — `~/systemUpdate`.
-5. **XDG state dir (last resort)** — `~/.local/state/systemUpdate`.
+2. **English fallback** — `~/Documents/systemUpdate` or `~/Document/systemUpdate`.
+3. **Home backup** — `~/systemUpdate`.
+4. **XDG state dir (last resort)** — `~/.local/state/systemUpdate`.
 
 To pin a specific directory, set `LOG_DIR` in `config` or pass
 `SYSUPDATE_LOG_DIR=/your/path` in the environment.
@@ -159,7 +164,7 @@ overrides the file.
 | --------------- | ------------------------- | -------------- | ----------------------------------------------------------------------------------------------------- |
 | `LOG_DIR`       | `SYSUPDATE_LOG_DIR`       | *cascade*      | Where log files go (see "Where logs go" above)                                                        |
 | `SKIP_CHANNELS` | `SYSUPDATE_SKIP_CHANNELS` | empty          | Space-separated channel IDs to skip, e.g. `npm go`                                                    |
-| `GO_BIN_DIR`    | `SYSUPDATE_GO_BIN_DIR`    | `$HOME/go/bin` | Where `go install` places binaries                                                                    |
+| `GO_BIN_DIR`    | `SYSUPDATE_GO_BIN_DIR`    | `go env GOBIN` | Where `go install` places binaries (respects `GOBIN`/`GOPATH`)                                        |
 | `LOG_KEEP`      | `SYSUPDATE_LOG_KEEP`      | `50`           | How many log files to keep                                                                            |
 | `STATUS_AUR`    | `SYSUPDATE_STATUS_AUR`    | `0`            | If `1`, `--status` also queries the AUR (`yay -Qua`) — this does a network request and is not instant |
 
@@ -180,6 +185,11 @@ the closing count:
 
 If `curl` or `jq` is missing, or the marketplace does not respond, the channel
 reports that it could not check and falls back to listing installed extensions.
+
+**Note on update output:** while an update runs, its output goes to your
+terminal so you can see progress. That output is not duplicated into the log
+file — the log records every channel boundary and the report before each update,
+which is the information you need when reading it later.
 
 ## FAQ / troubleshooting
 

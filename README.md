@@ -40,7 +40,7 @@ Her araç (script) kendi başına çalışır ve farklı sistem veya donanım ih
 ### [systemUpdate](systemUpdate/)
 Arch Linux system and app updater, replacing the old `fullupdate` shell function. Every part asks for confirmation and every run is logged. **Code, settings and this entry are English only.**
 
-  - [systemUpdate.sh](systemUpdate/systemUpdate.sh) — Main script. Flags: `--system` (pacman/AUR/firmware/DKMS/.pacnew), `--apps` (npm/VS Code/pipx/uv/... channels, numbered `[i/total]`), `--status` (changes nothing, only reports), `--log`, `--help`.
+  - [systemUpdate.sh](systemUpdate/systemUpdate.sh) — Main script. Flags: `--system` (pacman/AUR/firmware/DKMS/.pacnew), `--apps` (npm/VS Code/pipx/uv/... channels, numbered `[i/total]`), `--status` (read-only, writes log files), `--log`, `--full` (update everything without asking), `--help`.
   - [lib/](systemUpdate/lib/) — Infrastructure modules (`config.sh` settings, `log.sh` FIFO+tee logging and log pruning, `system.sh` the 5-step system update and reboot detection, `status.sh` the read-only report, `apps.sh` the channel table).
   - `config` — Settings (`LOG_DIR`, `LOG_KEEP`, `SKIP_CHANNELS`, `GO_BIN_DIR`, `STATUS_AUR`). Lives **next to the script** and is tracked in the repository — every line is commented out, so a fresh clone runs as-is. No template file.
   - [README.md](systemUpdate/README.md) — Installation, channel table, safety rules, settings and troubleshooting.
