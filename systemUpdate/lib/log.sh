@@ -260,28 +260,34 @@ info() {
 # In report mode (--status) confirmations are never asked.
 REPORT_ONLY="${REPORT_ONLY:-0}"
 
-# confirm <question>  →  0 for yes, 1 for no/skip
+# confirm <question>  →  0=yes, 1=no/skip, 2=defer, 3=update-all, 4=quit
 #
 # Default is NO. A skipped channel is only lost work, but a channel that runs
 # by accident cannot be undone.
+#
+# Extended options (used by apps_update but not system_update):
+#   a  defer: skip now, but run LAST after all other channels are done
+#   A  update-all: run this channel plus every remaining channel without
+#      asking again
+#   q  quit: abort the whole run immediately
 confirm() {
 	local question="$1" answer=""
 	if [ "$REPORT_ONLY" = 1 ]; then
 		return 1
 	fi
-	# If stdin is not a terminal (cron, pipe, script) we cannot ask. MEASURED:
-	# bash's `read -p` returns rc=1 without printing the prompt when stdin is
-	# not a terminal — so the question would not even appear on screen and the
-	# user would be left staring at a hang.
 	if [ ! -t 0 ]; then
 		printf '    (no interaction, skipping)\n'
 		return 1
 	fi
-	# In bash `read -p` writes the prompt to stderr, and stderr also goes to
-	# the log, so the question is visible both on screen and in the log.
-	read -r -p "    $question [y/N] " answer
+	read -r -p "    $question [y/N/a/A/q] " answer
+	# a (defer) and A (update-all+remaining) are distinct:
+	# lowercase a defers this channel only, uppercase A updates this plus
+	# all remaining channels without asking again.
 	case "$answer" in
 	y | Y | yes | Yes | YES) return 0 ;;
+	a) return 2 ;;            # defer after remaining channels
+	A) return 3 ;;            # this + remaining channels
+	q | Q | quit) return 4 ;; # abort
 	*) return 1 ;;
 	esac
 }

@@ -251,7 +251,8 @@ _upd_go() {
 apps_update() {
 	local line id label present report_command update_command
 	local missing=0 updated=0 index=0 total=0 skipped_count=0
-	local -a lines=()
+	local -a lines=() deferred=()
+	local update_all=0
 	mapfile -t lines < <(_channels)
 
 	total=${#lines[@]}
@@ -287,7 +288,30 @@ apps_update() {
 		# No update command means this channel is INFORMATION ONLY.
 		[ -n "$update_command" ] || continue
 
-		confirm "Update $label?" || continue
+		# Skip confirm for remaining channels when update_all is set.
+		if [ "$update_all" -eq 1 ]; then
+			exec 1>&9 2>&9
+			_run "$update_command"
+			exec >"$_FIFO" 2>&1
+			updated=$((updated + 1))
+			continue
+		fi
+
+		confirm "Update $label?"
+		case "$?" in
+		0) ;;          # yes, run now
+		1) continue ;; # skip
+		2)             # defer: run after all other channels
+			deferred+=("$line")
+			continue
+			;;
+		3) # update this and all remaining
+			update_all=1
+			;;
+		4) # quit
+			return 0
+			;;
+		esac
 
 		# Temporarily restore stdout/stderr to terminal so the update command
 		# shows real-time progress (npm, pip, uv, go install all hide output
@@ -298,6 +322,19 @@ apps_update() {
 		# Back to FIFO for subsequent logging.
 		exec >"$_FIFO" 2>&1
 
+		updated=$((updated + 1))
+	done
+
+	# Process deferred channels last, one by one.
+	for line in "${deferred[@]}"; do
+		[ -n "$line" ] || continue
+		IFS='|' read -r id label present report_command update_command <<<"$line"
+		printf '\n  [deferred] %s — %s\n' "$id" "$label"
+		report "$report_command"
+		confirm "Update $label?" || continue
+		exec 1>&9 2>&9
+		_run "$update_command"
+		exec >"$_FIFO" 2>&1
 		updated=$((updated + 1))
 	done
 

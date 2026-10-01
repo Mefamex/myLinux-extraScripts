@@ -114,6 +114,9 @@ These are deliberate choices:
   terminal (cron, a script, a pipe) confirmations are automatically skipped as
   NO. Something that gets silently skipped is only work lost; something that
   runs by accident cannot be undone.
+  The confirmation prompt accepts `y` (update this), `N` (skip), `a` (defer this
+  to the end of the run), `A` (update this and all remaining without asking),
+  and `q` (abort the current run).
 - **`brew` is excluded on purpose.** `/opt/brew` belongs to pacman and running
   `brew update` would do `git pull` on it (high risk of conflict). There are 27
   formulae installed, but `/opt/brew/bin` is not on `PATH` anyway, so none of
