@@ -56,12 +56,15 @@ The full output (stdout **and** stderr) of every run is written to exactly
 one file:
 
 ```
-systemUpdateYYYY-MM-DD-HH-MM.txt
+systemUpdateYYYYMMDD-HHMMSS.txt
 ```
 
-If two runs start in the same minute, the second one gets `-1`, the third `-2`
+If two runs start in the same second, the second one gets `-1`, the third `-2`
 and so on — nothing is ever overwritten. Old logs are pruned automatically
 (see `LOG_KEEP` below).
+
+Log filenames include seconds (`YYYYMMDD-HHMMSS`) to avoid collisions when
+multiple runs start in the same minute.
 
 ### Where logs go
 
@@ -90,7 +93,9 @@ The order is intentional:
 
 ## App channels
 
-App channels live in a single table inside `lib/apps.sh`. Each one is numbered
+App channels are defined in individual files under `lib/apps/channels/` (e.g.
+`npm.sh`, `code.sh`, `pipx.sh`, etc.). Execution order is controlled by
+`lib/apps/sort.conf` (one channel ID per line). Each one is numbered
 (e.g. `1/16`) so you can see exactly how far the run has gone.
 
 | Channel    | What it does                                                        |
@@ -142,18 +147,23 @@ These are deliberate choices:
 
 ## Files
 
-| File              | Purpose                                                                |
-| ----------------- | ---------------------------------------------------------------------- |
-| `systemUpdate.sh` | Entry point: arguments, signal trap, log orchestration                 |
-| `config`          | The settings. Tracked in git, every line commented out                 |
-| `lib/config.sh`   | Loads settings from the config file or environment                     |
-| `lib/log.sh`      | FIFO+tee logging, confirmations, reporting, log pruning                |
-| `lib/system.sh`   | The 5-step system update + reboot detection                            |
-| `lib/status.sh`   | `--status` read-only reporting                                         |
-| `lib/apps.sh`     | The channel table + per-channel helpers                                |
-| `README.md`       | This file                                                              |
-| `TODO.md`         | Open work, notes on how things work, and why they are the way they are |
-| `.gitignore`      | Only the temporary logging FIFOs (`config` is deliberately tracked)    |
+| File                         | Purpose                                                                |
+| ---------------------------- | ---------------------------------------------------------------------- |
+| `systemUpdate.sh`            | Entry point: arguments, signal trap, log orchestration                 |
+| `config`                     | The settings. Tracked in git, every line commented out                 |
+| `lib/config.sh`              | Loads settings from the config file or environment                     |
+| `lib/log.sh`                 | FIFO+tee logging, confirmations, reporting, log pruning                |
+| `lib/system.sh`              | The 5-step system update + reboot detection                            |
+| `lib/status.sh`              | `--status` read-only reporting                                         |
+| `lib/apps.sh`                | Thin wrapper loading modular app runner                                |
+| `lib/apps/runner.sh`         | Discovers/loads/runs channels from `channels/`                         |
+| `lib/apps/sort.conf`         | Channel execution order (one ID per line)                              |
+| `lib/apps/channels/*.sh`     | Per-channel definitions (npm, code, pipx, uv, ...)                     |
+| `README.md`                  | This file                                                              |
+| `TODO.md`                    | Open work                                                              |
+| `TODO.DONE.md`               | Completed tasks with dates                                             |
+| `NOTES.md`                   | Technical notes                                                        |
+| `.gitignore`                 | Only the temporary logging FIFOs (`config` is deliberately tracked)    |
 
 ## Settings
 
@@ -187,9 +197,9 @@ If `curl` or `jq` is missing, or the marketplace does not respond, the channel
 reports that it could not check and falls back to listing installed extensions.
 
 **Note on update output:** while an update runs, its output goes to your
-terminal so you can see progress. That output is not duplicated into the log
-file — the log records every channel boundary and the report before each update,
-which is the information you need when reading it later.
+terminal so you can see progress. That output is **also captured in the log
+file** (via the FIFO), so the full pacman/yay/npm/download progress is
+preserved for later review.
 
 ## FAQ / troubleshooting
 

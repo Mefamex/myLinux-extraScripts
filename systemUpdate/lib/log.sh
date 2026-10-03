@@ -114,7 +114,7 @@ log_open() {
 	# Fix: do not pick a name, RESERVE it atomically. A `>` redirection under
 	# `set -o noclobber` FAILS if the file exists — instead of asking "does it
 	# exist?" we say "try to create it", and a race becomes impossible.
-	f="$d/${LOG_LABEL}$(date +%Y-%m-%d-%H-%M).txt"
+	f="$d/${LOG_LABEL}$(date +%Y%m%d-%H%M%S).txt"
 	local f0="${f%.txt}" i=1
 	while ! (set -o noclobber && : >"$f") 2>/dev/null; do
 		f="${f0}-$i.txt"
@@ -140,7 +140,9 @@ log_open() {
 
 	# ORDER MATTERS: tee opens first (it blocks on the reading end of the
 	# FIFO), then the writing end is opened and both sides unblock.
-	tee "$f" <"$_FIFO" &
+	# File path goes through sed to strip ANSI CSI sequences (colors, bold, etc.)
+	# Terminal output remains colored.
+	tee >(sed -r 's/\x1b\[[0-9;]*m//g' >"$f") <"$_FIFO" &
 	_TEE_PID=$!
 
 	exec 9>&1
@@ -232,10 +234,10 @@ EOF
 # ran together (MEASURED on a real run: "[3/5] Firmware" and "[4/5] DKMS" had a
 # single blank line between them).
 section() {
-	printf '\n================================\n'
+	printf '\n\n================================\n'
 	printf '==> %s\n' "$*"
 	printf '================================\n'
-	printf '\n\n\n'
+	printf '\n'
 }
 
 warn() {
@@ -331,4 +333,29 @@ _run() {
 	@*) "${1#@}" ;;
 	*) eval "$1" ;;
 	esac
+}
+
+# _run_tty <command-or-@function>
+#
+# Run an update command with stdout/stderr going through the FIFO to tee,
+# so output appears on terminal in real-time AND is captured in the log file.
+# This replaces the old approach of redirecting to fd 9 (terminal only).
+#
+# Crucially, it keeps the FIFO write end open on fd 3/4, otherwise tee would
+# see EOF, exit, and the script would block forever when it later tries to
+# reopen the FIFO.
+_run_tty() {
+	local rc
+	# Save current stdout/stderr (which go to FIFO via tee)
+	exec 3>&1 4>&2
+	# Redirect stdout/stderr to the FIFO so tee captures output for both terminal and log
+	exec 1>"$_FIFO" 2>&1
+
+	# Run command, output goes to FIFO -> tee -> (terminal + log)
+	_run "$1"
+	rc=$?
+
+	# Restore stdout/stderr to FIFO
+	exec 1>&3 2>&4 3>&- 4>&-
+	return "$rc"
 }
