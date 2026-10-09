@@ -49,6 +49,7 @@ load_config() {
 	[ -n "${SR_REPORT_ROOT:-}" ] && REPORT_ROOT="$SR_REPORT_ROOT"
 	[ -n "${SR_KEEP:-}" ] && KEEP_REPORTS="$SR_KEEP"
 	[ -n "${SR_LOG:-}" ] && LOG_FILE="$SR_LOG"
+	[ -n "${SR_SIZE_CAP:-}" ] && SECTION_SIZE_CAP="$SR_SIZE_CAP"
 
 	# Accept a few spellings for booleans so `SR_SUDO=no` and `SR_SUDO=0` both
 	# mean the same thing.
@@ -60,6 +61,11 @@ load_config() {
 	case "${SR_CLEANUP:-}" in
 	0 | false | no | off) CLEANUP_ENABLED=0 ;;
 	1 | true | yes | on) CLEANUP_ENABLED=1 ;;
+	esac
+
+	case "${SR_GZIP:-}" in
+	0 | false | no | off) GZIP_OLD_REPORTS=0 ;;
+	1 | true | yes | on) GZIP_OLD_REPORTS=1 ;;
 	esac
 
 	# --- defaults and validation ------------------------------------
@@ -78,6 +84,11 @@ load_config() {
 	KEEP_REPORTS="${KEEP_REPORTS:-10}"
 	USE_SUDO_CHECKS="${USE_SUDO_CHECKS:-1}"
 	CLEANUP_ENABLED="${CLEANUP_ENABLED:-1}"
+	# SECTION_SIZE_CAP is KB; 0 means no cap. Read in lib/report.sh.
+	SECTION_SIZE_CAP="${SECTION_SIZE_CAP:-0}"
+	# GZIP_OLD_REPORTS: 1 = gzip reports beyond KEEP_REPORTS instead of
+	# deleting them. Read in lib/cleanup.sh.
+	GZIP_OLD_REPORTS="${GZIP_OLD_REPORTS:-0}"
 
 	# A non-numeric KEEP_REPORTS would make the cleanup arithmetic fail later
 	# with a confusing error. Catch it here, where the message can name the
@@ -91,4 +102,13 @@ load_config() {
 	# Zero would delete the report that was just collected, including the one
 	# the user is looking at. One is the smallest value that still makes sense.
 	[ "$KEEP_REPORTS" -lt 1 ] && KEEP_REPORTS=1
+
+	# A negative or non-numeric size cap would break the truncation
+	# arithmetic. Zero means "no cap", which is the default.
+	case "$SECTION_SIZE_CAP" in
+	'' | *[!0-9]*)
+		warn "SECTION_SIZE_CAP is not a number ('$SECTION_SIZE_CAP'), using 0 (no cap)."
+		SECTION_SIZE_CAP=0
+		;;
+	esac
 }

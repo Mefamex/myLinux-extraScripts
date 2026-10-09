@@ -8,7 +8,9 @@
 # this file exists so the state of the work and the reasoning behind it are not
 # lost between sessions.
 #
-#   [x] done
+# Completed work has moved to TODO.DONE.md (newest first).
+#
+#   [x] done      -> see TODO.DONE.md
 #   [ ] open
 #   [!] known limit, deliberately not fixed
 
@@ -16,146 +18,13 @@
 # -----------------------------------------------------------------------------
 # Current state
 # -----------------------------------------------------------------------------
-# version      5.0.2
-# version date 2026-10-01
+# version      5.1.0
+# version date 2026-10-09
 # shellcheck   clean (`shellcheck -x systemReport.sh lib/*.sh lib/sections/*.sh`)
 # syntax       clean (`bash -n` on all 18 shell files)
 # language     English only, by decision (see Notes)
-# tracked      VERSION, config, README.md, todo.md, lib/**
-# committed    a304b4f (code + READMEs), 39bbcfb (this file)
-
-
-# -----------------------------------------------------------------------------
-# [x] Done
-# -----------------------------------------------------------------------------
-
-## Restructure from the single-file version
-- [x] Split into `lib/` infrastructure modules plus one file per section.
-- [x] Section registry in one array, so adding a section touches two files:
-      the module and the registry entry.
-- [x] Section modules only run commands. They know no file name, no header
-      format and no redirection; all of that lives in `lib/report.sh`.
-- [x] ShellCheck clean from the start, not as a cleanup pass afterwards.
-
-## Version system
-- [x] `VERSION` file is the only place a version number exists
-      (`VERSION`, `VERSION_DATE`, `AUTHOR`).
-- [x] Version reaches: banner, `--version`, every section header, the combined
-      report, the terminal log header, and the final summary.
-- [x] `VERSION_INFO` is the display form, `5.0.2 (2026-10-01)`.
-- [x] Bump rules documented in the file itself.
-
-## Output location
-- [x] Output root resolved instead of hardcoded: `xdg-user-dir DOCUMENTS` →
-      `XDG_DOCUMENTS_DIR` → `~/Documents` → `~/systemReport` → `.local/share`.
-- [x] No localised name ("Belgeler", "Dokumente") hardcoded anywhere.
-- [x] Home-directory backup added when Documents cannot be resolved.
-- [x] Resolved path printed at startup, so it is never a mystery.
-
-## Reports and logs
-- [x] One `arch_report_YYYYMMDD_HHMMSS/` folder per run, timestamp collision
-      gets a `-2` suffix rather than overwriting.
-- [x] `arch_full_report.txt` merges every section, with a table of contents.
-- [x] `terminal_log.txt` written **inside each report folder**, ANSI stripped.
-- [x] Version, author, host and start time in the log header.
-- [x] Log directory created automatically; failure is reported, not swallowed.
-
-## Settings
-- [x] `config` is tracked in the repository. No template file, no git-ignored
-      personal copy, fresh clone runs as-is.
-- [x] English variable names: `REPORT_ROOT`, `KEEP_REPORTS`,
-      `USE_SUDO_CHECKS`, `CLEANUP_ENABLED`, `LOG_FILE`.
-- [x] Environment overrides config, arguments override both.
-- [x] `KEEP_REPORTS` default 10.
-- [x] Wrong `SR_*=...` syntax after the script name is detected and explained.
-
-## Cleanup
-- [x] Keep the newest N, delete the rest without asking, print what was deleted.
-- [x] The current run's own folder is never a candidate for deletion.
-- [x] Only `arch_report_*` directories directly under the report root.
-
-## Sections
-- [x] Ten sections, English names, English content.
-- [x] `--only NN,NN` filter with validation: unknown number is an error, not a
-      silently empty report.
-- [x] Missing tools reported in the report instead of leaving empty sections.
-- [x] Privileged checks skip gracefully and say so in the report.
-
-## Output readability
-- [x] Boundaries are 2 or 3 rule lines, in code and in reports alike.
-- [x] `rule` / `rule_line` helpers in `lib/log.sh`, single width constant.
-- [x] Same treatment in `config`.
-
-## Documentation
-- [x] `README.md` for the tool: purpose, features, usage, settings, structure,
-      sections, version history, deliberate non-goals.
-- [x] Author credit in `README.md`, in the `systemReport.sh` header, in
-      `VERSION`, and in every report header.
-- [x] Entry in the main repository `README.md`.
-- [x] Both READMEs read line by line against the files that exist (5.0.2).
-      Corrected: version numbers, the missing `todo.md` in the structure tree,
-      the `.gitignore` description, the `VERSION.txt` field list, the `~` vs
-      `$HOME` pitfall in `config`, a "no masking" note in the non-goals, and the
-      `todo.md` link in the main README.
-
-
-# -----------------------------------------------------------------------------
-# [x] Machine-tested combinations
-# -----------------------------------------------------------------------------
-# Run on the real machine on 2026-10-01. Everything below was executed and the
-# output read. Three real bugs came out of it, all fixed in 5.0.2.
-
-## Arguments
-- [x] `--help`, `--version`, `-V`
-- [x] `--only 03,05,08` (sudo, password asked once)
-- [x] `-o /tmp/sr-test`
-- [x] `--keep 3` on the real root: 7 found, 3 kept, 4 deleted, all listed
-- [x] `--nosudo`, `--noclean`
-- [x] No filter at all: all ten section files produced
-
-## Rejected input and exit codes
-- [x] `--only 99`             -> 1  section not found: 99_*  (valid: 00-09)
-- [x] `--only 3`              -> 1  invalid section number: '3' (two digits)
-- [x] `--only "01, 02"`       -> 1  space or missing number, valid form shown
-- [x] `--only` with no value  -> 1  needs a section list
-- [x] `-o` with no value      -> 1  needs a directory
-- [x] `SR_SUDO=0` as argument -> 2  recognised as an env var, correct form shown
-- [x] `--xyz`                 -> 2  unknown argument, points at --help
-- [x] `--keep abc`            -> 0  warns, falls back to 10, run continues
-
-## Environment variables
-- [x] `SR_KEEP=20`                 honoured, limit shown as /20
-- [x] `SR_SUDO=no`                 honoured, checks needing root skipped
-- [x] `SR_CLEANUP=off`             honoured, cleanup skipped
-- [x] `SR_REPORT_ROOT=~/deneme`    resolved to /home/mfmx/deneme, tilde expanded
-- [x] `SR_LOG=/tmp/sr-paylasimli.log`  shared log, path shown in the summary
-- [x] `NO_COLOR=1`                 run completed, no ANSI in the log
-
-## Sections individually
-- [x] All ten, one per run, plus a full unfiltered run. Every file non-empty:
-      00 1402 B, 01 3625, 02 16216 (with sudo) / 15676 (without),
-      03 5357, 04 7531, 05 4011, 06 11176, 07 16905 (with sudo) / 10756,
-      08 19997, 09 4550.
-- [x] Combined report contents table lists all ten with correct titles.
-- [x] `02_hardware.txt` grows when sudo is available: 15676 -> 16216 bytes.
-- [x] Same-second runs get `-2`, `-3` suffixes and still sort correctly:
-      `..._203750-2` is older than `..._203751`, and `-3` is newer than `-2`.
-
-## Cleanup
-- [x] 3 fake old folders plus `--keep 2` -> 3 found, 2 kept, 1 deleted, listed.
-- [x] The current run's own folder was never deleted, in any run.
-
-## Bugs found by this round, fixed in 5.0.2
-- [x] Trailing comma in "collecting only: 03,05,". `${var%,?}` cannot strip a
-      trailing comma: in shell globbing `?` matches exactly one character, never
-      zero, so the pattern does not match and nothing is removed. Changed to
-      `${var%,}`. Found by reading the machine output; ShellCheck cannot see it.
-- [x] The same-timestamp warning printed between the banner and the path block.
-      `create_report_dir` now only records the name in `REPORT_DIR_COLLIDED`;
-      `systemReport.sh` prints it after the paths.
-- [x] `~` in `REPORT_ROOT` inside `config` does not expand. The file is sourced,
-      so a quoted `~` stays a literal tilde and the path becomes
-      `$HOME/~/...`. Documented in `config`: write `$HOME`, not `~`.
+# tracked      VERSION, config, README.md, todo.md, TODO.DONE.md, lib/**
+# last audit   2026-10-09 — 5.1.0 feature round + verification pass
 
 
 # -----------------------------------------------------------------------------
@@ -173,15 +42,29 @@
       `dmidecode`, `fdisk`, `smartctl`, `dmesg` and `efibootmgr` all produce
       output and none of them is silently empty.
 
-## 2. Things that could be added later
-- [ ] `--list` to print the section registry without collecting anything.
-- [ ] `--dry-run` that resolves all paths, prints them and stops.
-- [ ] Per-section size cap. The report is tens of thousands of lines and the
-      logs section is the largest part.
-- [ ] Optional gzip of reports older than the newest N.
-- [ ] Warn when a section produces an implausibly small file, which usually
-      means a tool silently returned nothing. Machine testing gave 1402 B for
-      `00_privacy.txt`, which is the floor to compare against.
+## 2. Findings from the 2026-10-09 audit (recommendations, not bugs)
+# No functional bugs were found. The items below are code-quality or
+# robustness improvements worth considering.
+
+- [ ] `lib/config.sh` — `~` inside a quoted value in `config` is not expanded
+      (the file is sourced). Currently documented as a known pitfall. Could be
+      improved by expanding a leading `~` after sourcing, so the shipped
+      config can use either `~` or `$HOME` without surprises.
+- [ ] `lib/log.sh` — `RULE_WIDTH=64` is hardcoded. Could derive from
+      `COLUMNS` or `tput cols` so rules span the terminal on wider screens.
+      Must stay at 64 when not a terminal (log file must not change width).
+- [ ] `lib/sudo.sh` — `fix_report_ownership` only fixes ownership when
+      `REPORT_ROOT == $HOME/systemReport`. If the user sets a custom root
+      under their own home (e.g. `-o ~/reports`), ownership is not fixed when
+      running under `sudo -u`. Could check "is REPORT_ROOT under $home"
+      instead of exact equality.
+- [ ] `systemReport.sh` line ~382 — the `${SECTION_FILTER%,}` strip is correct
+      but non-obvious (a previous bug used `${var%,?}` which never matches).
+      A one-line comment explaining why `,?` is wrong would prevent a
+      regression.
+- [ ] `lib/report.sh` — warn when a section file is implausibly small
+      (e.g. < 500 bytes), which usually means a tool silently returned
+      nothing. `00_privacy.txt` at 1402 B is the known floor.
 
 
 # -----------------------------------------------------------------------------
@@ -219,18 +102,21 @@
 # mixes runs together, which defeats the point of a per-run report folder.
 #
 # Three-line rules at major transitions, two-line at minor ones. One line was too
-# thin to register while output scrolls past. Three identical lines everywhere
+# thin to register as output scrolls past. Three identical lines everywhere
 # was too noisy, hence two levels.
 #
 # No personal value in the code. No hardcoded host name, network name or device
 # name, so the repository carries nothing machine-specific.
 #
-# Module naming is English too: `lib/sections/`, not `lib/bolumler/`. Part of the
-# same English-only decision.
+# Module naming is English too: `lib/sections/`, not `lib/bolumler/`. Part of
+# the same English-only decision.
+#
+# Completed work moved to TODO.DONE.md on 2026-10-09 so the open list stays
+# short and scannable. TODO.DONE.md is ordered newest first.
 
 
 # -----------------------------------------------------------------------------
-# History
+# History (short; full log in TODO.DONE.md)
 # -----------------------------------------------------------------------------
 # 3.1    single file; old folders deleted without asking; no version system.
 # 4.0.0  modular rewrite; XDG-aware output root; terminal log added; `--only`;
@@ -243,3 +129,4 @@
 # 5.0.2  first full pass of machine testing. Fixed: trailing comma in the
 #        `--only` echo line, same-timestamp warning printed before the path
 #        block, `~` in `REPORT_ROOT` documented as non-expanding in `config`.
+# 5.1.0  `--list`, `--dry-run`, `SECTION_SIZE_CAP`, `GZIP_OLD_REPORTS`.

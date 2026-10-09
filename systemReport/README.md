@@ -5,8 +5,8 @@ Arch Linux system report collector — modular, readable, careful.
 > |                  |                          |
 > | ---------------- | ------------------------ |
 > | *author*         | **@mefamex**             |
-> | *version*        | 5.0.2                    |
-> | *version date*   | 2026-10-01               |
+> | *version*        | 5.1.0                    |
+> | *version date*   | 2026-10-09               |
 > | *platform*       | Arch Linux (x86_64)      |
 
 
@@ -38,6 +38,16 @@ written inside each report folder so a folder is a self-contained artefact.
 - **Terminal log**: the complete console output is written to `terminal_log.txt`
   with ANSI codes stripped, so it is greppable and pasteable.
 - **Section filter**: `--only 03,04,05` collects only the sections you name.
+- **Section registry**: `--list` prints every section with its number, file
+  name and title, then exits without collecting anything.
+- **Dry run**: `--dry-run` resolves all paths, prints what would happen
+  (root, folder, log, sudo, cleanup, sections, size cap) and stops without
+  writing a single file.
+- **Per-section size cap**: `SECTION_SIZE_CAP` (in KB) truncates any section
+  that grows too large, with a note at the truncation point. Default is off.
+- **Optional gzip**: `GZIP_OLD_REPORTS=1` compresses reports beyond the keep
+  limit into `.tar.gz` instead of deleting them, saving disk space while
+  keeping history.
 - **Gentle cleanup**: old reports are deleted without asking, but the newest N
   are kept (default 10).
 - **Safe**: runs under `set -uo pipefail`, refuses to start when a module is
@@ -70,6 +80,12 @@ through `SR_CONFIG`.
 # Choose the report root
 ./systemReport.sh -o /tmp/report-test
 
+# Print the section registry without collecting
+./systemReport.sh --list
+
+# Resolve paths and show what would happen, without writing anything
+./systemReport.sh --dry-run
+
 # Skip checks that need root
 ./systemReport.sh --nosudo
 
@@ -99,6 +115,8 @@ file and no git-ignored personal copy.
 | `KEEP_REPORTS`    | How many reports to keep                          | 10         |
 | `USE_SUDO_CHECKS` | `1/0` — run the checks that need root             | 1          |
 | `CLEANUP_ENABLED` | `1/0` — delete reports beyond `KEEP_REPORTS`      | 1          |
+| `GZIP_OLD_REPORTS`| `1/0` — gzip reports beyond `KEEP_REPORTS` instead of deleting | 0 |
+| `SECTION_SIZE_CAP`| Max section file size in KB, `0` = no cap         | 0          |
 | `LOG_FILE`        | Terminal log path; empty = inside each report     | per-report |
 
 `config` is sourced by the shell, so `~` inside a quoted value is **not**
@@ -140,6 +158,8 @@ write instead of swallowing it.
 | `SR_KEEP`        | Reports to keep                |
 | `SR_SUDO`        | `0` skips root-only checks     |
 | `SR_CLEANUP`     | `0` leaves old reports alone   |
+| `SR_GZIP`        | `1` gzips old reports instead of deleting |
+| `SR_SIZE_CAP`    | Max section size in KB, `0` = no cap |
 | `SR_LOG`         | Terminal log path              |
 | `SR_CONFIG`      | Use a different config file    |
 
@@ -213,6 +233,11 @@ systemReport/
 
 ## Version history
 
+- **5.1.0** (2026-10-09) — New features: `--list` prints the section registry
+  without collecting; `--dry-run` resolves all paths and shows what would
+  happen without writing files; `SECTION_SIZE_CAP` truncates oversized section
+  files (default off); `GZIP_OLD_REPORTS` compresses old reports into
+  `.tar.gz` instead of deleting them (default off).
 - **5.0.2** (2026-10-01) — First full round of machine testing. Fixed: a stray trailing comma in the `--only` echo line, the same-timestamp warning printed before the path block instead of after it, and the `~`-in-`config` path pitfall now documented.
 - **5.0.1** (2026-10-01) — Terminal log written inside each report again, with version and author in its header. Log directory created automatically. A shared fixed-path log is still available by setting `LOG_FILE`.
 - **5.0.0** (2026-10-01) — Full English rewrite. Settings, code and output are English only. The template file is gone — `config` is tracked directly. Output root falls back to a home-directory backup. Rules are 2–3 lines tall. Keep count default 10. Author credit added.

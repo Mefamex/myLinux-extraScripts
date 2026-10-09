@@ -5,6 +5,8 @@
 #   ./systemReport.sh                 collect a full report
 #   ./systemReport.sh --only 03,04    collect only the storage and graphics sections
 #   ./systemReport.sh -o ~/reports   write reports under a different root
+#   ./systemReport.sh --list          print the section registry and exit
+#   ./systemReport.sh --dry-run       resolve paths, print what would happen, stop
 #   ./systemReport.sh --version       print the version and its date
 #   ./systemReport.sh --help          print this text
 #
@@ -93,6 +95,8 @@ KEEP_OVERRIDE=''
 ROOT_OVERRIDE=''
 SHOW_HELP=false
 SHOW_VERSION=false
+SHOW_LIST=false
+DRY_RUN=false
 NO_SUDO=false
 NO_CLEAN=false
 
@@ -135,6 +139,14 @@ while [ $# -gt 0 ]; do
 		SHOW_VERSION=true
 		shift
 		;;
+	--list)
+		SHOW_LIST=true
+		shift
+		;;
+	--dry-run)
+		DRY_RUN=true
+		shift
+		;;
 	--nosudo)
 		NO_SUDO=true
 		shift
@@ -175,6 +187,29 @@ load_version
 
 if [ "$SHOW_VERSION" = true ]; then
 	printf 'systemReport %s\n' "$VERSION_INFO"
+	exit 0
+fi
+
+# --list prints the section registry and exits. It runs before any config
+# loading because it needs nothing beyond the registry array below.
+if [ "$SHOW_LIST" = true ]; then
+	printf 'systemReport %s — section registry\n\n' "$VERSION_INFO"
+	printf '  %-4s %-26s %s\n' 'No' 'File' 'Title'
+	printf '  %-4s %-26s %s\n' '---' '--------------------------' '-----'
+	for _e in '00|00_privacy.txt|Privacy Notice' \
+		'01|01_system.txt|Basic System Information' \
+		'02|02_hardware.txt|Hardware Details' \
+		'03|03_storage.txt|Storage and Disks' \
+		'04|04_graphics.txt|Graphics and Display' \
+		'05|05_network.txt|Network Configuration' \
+		'06|06_packages.txt|Installed Packages' \
+		'07|07_logs.txt|System Logs and Errors' \
+		'08|08_configuration.txt|Configuration Files' \
+		'09|09_users.txt|Users and Groups'; do
+		IFS='|' read -r _n _f _t <<<"$_e"
+		printf '  %-4s %-26s %s\n' "$_n" "$_f" "$_t"
+	done
+	printf '\nUse --only NN,NN to collect a subset.\n'
 	exit 0
 fi
 
@@ -380,6 +415,44 @@ if [ -n "$SECTION_FILTER" ]; then
 	# character, never zero, so `,?` cannot match a trailing comma that has
 	# nothing after it and nothing gets stripped.
 	warn "Filter active - collecting only: ${SECTION_FILTER%,}"
+fi
+
+# --dry-run: resolve every path, print what would happen, and stop. The
+# report folder is NOT created, so nothing on disk changes.
+if [ "$DRY_RUN" = true ]; then
+	printf '\n'
+	rule 2 '='
+	info 'DRY RUN — no files will be written.'
+	rule 2 '='
+	printf '\n'
+	detail 'Report root' "$REPORT_ROOT${ROOT_SOURCE:+  (from: $ROOT_SOURCE)}"
+	detail 'Report folder' "$REPORT_ROOT/${REPORT_PREFIX}_$REPORT_STAMP"
+	detail 'Terminal log' "${LOG_FILE:-$REPORT_ROOT/${REPORT_PREFIX}_$REPORT_STAMP/terminal_log.txt}"
+	if [ "$USE_SUDO_CHECKS" = 1 ] && [ "$(id -u)" -ne 0 ]; then
+		detail 'Sudo checks' 'would prompt for a password once'
+	elif [ "$USE_SUDO_CHECKS" = 1 ]; then
+		detail 'Sudo checks' 'would run (already root)'
+	else
+		detail 'Sudo checks' 'skipped (--nosudo / USE_SUDO_CHECKS=0)'
+	fi
+	if [ "$CLEANUP_ENABLED" = 1 ]; then
+		detail 'Cleanup' "would keep the newest $KEEP_REPORTS report(s)"
+	else
+		detail 'Cleanup' 'skipped (--noclean / CLEANUP_ENABLED=0)'
+	fi
+	if [ -n "$SECTION_FILTER" ]; then
+		detail 'Sections' "only: ${SECTION_FILTER%,}"
+	else
+		detail 'Sections' 'all (00-09)'
+	fi
+	if [ "$SECTION_SIZE_CAP" -gt 0 ] 2>/dev/null; then
+		detail 'Size cap' "${SECTION_SIZE_CAP} KB per section"
+	else
+		detail 'Size cap' 'none'
+	fi
+	rule 2 '='
+	ok 'Dry run complete. Run again without --dry-run to collect.'
+	exit 0
 fi
 
 # --- collect -----------------------------------------------------------------

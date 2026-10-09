@@ -11,6 +11,6 @@
 # VERSION_DATE must be bumped on every change, including pure code fixes.
 # It is not "today": it is the date the version was last modified.
 
-VERSION="5.0.2"
-VERSION_DATE="2026-10-01"
+VERSION="5.1.0"
+VERSION_DATE="2026-10-09"
 AUTHOR="@mefamex"

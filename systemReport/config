@@ -12,5 +12,11 @@ USE_SUDO_CHECKS=1
 # Remove reports older than KEEP_REPORTS (1=yes, 0=no).
 CLEANUP_ENABLED=1
 
+# Gzip reports beyond KEEP_REPORTS instead of deleting them (1=yes, 0=no).
+GZIP_OLD_REPORTS=0
+
+# Max section file size in KB; 0 = no cap. Large sections are truncated.
+SECTION_SIZE_CAP=0
+
 # Empty means terminal_log.txt is written inside each report folder.
 LOG_FILE=""

@@ -44,6 +44,21 @@ write_section() {
 		printf '\n'
 		rule 2 '='
 	} 2>&1 | strip_ansi >"$path"
+
+	# Size cap: a section that produced an implausibly large file is
+	# truncated so the merged report stays readable. The cap is in KB;
+	# 0 (the default) means no cap. The truncation note goes at the end
+	# so the reader knows data was removed, not lost.
+	if [ "${SECTION_SIZE_CAP:-0}" -gt 0 ] 2>/dev/null; then
+		local cap_bytes=$((SECTION_SIZE_CAP * 1024)) actual
+		actual="$(stat -c %s "$path" 2>/dev/null || printf '0')"
+		if [ "$actual" -gt "$cap_bytes" ]; then
+			head -c "$cap_bytes" "$path" >"$path.tmp" &&
+				mv "$path.tmp" "$path" &&
+				printf '\n... [section truncated at %s KB, use the full report for complete data]\n' \
+					"$SECTION_SIZE_CAP" >>"$path"
+		fi
+	fi
 }
 
 # Combine every section file into one flat report, with a table of contents.

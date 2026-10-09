@@ -78,10 +78,40 @@ prune_old_reports() {
 			continue
 			;;
 		esac
-		if rm -rf -- "$base" 2>/dev/null; then
+		if [ "${GZIP_OLD_REPORTS:-0}" = 1 ]; then
+			_gzip_report "$base" "$dir"
+		elif rm -rf -- "$base" 2>/dev/null; then
 			printf '  deleted: %s\n' "$dir"
 		else
 			err "could not delete: $base"
 		fi
 	done
+}
+
+# gzip a single report directory into <name>.tar.gz next to it. Called by
+# prune_old_reports when GZIP_OLD_REPORTS=1. Failure falls back to plain
+# deletion so a compression problem never causes unbounded growth.
+_gzip_report() {
+	local base="$1" name="$2" src_size dst_size
+
+	src_size="$(du -sb "$base" 2>/dev/null | cut -f1)"
+	src_size="${src_size:-0}"
+
+	if [ -e "$base.tar.gz" ]; then
+		warn "archive already exists, deleting instead: $name.tar.gz"
+		rm -rf -- "$base" 2>/dev/null && printf '  deleted: %s\n' "$name"
+		return 0
+	fi
+
+	if tar -czf "$base.tar.gz" -C "$REPORT_ROOT" "$name" 2>/dev/null; then
+		rm -rf -- "$base" 2>/dev/null
+		dst_size="$(stat -c %s "$base.tar.gz" 2>/dev/null)"
+		dst_size="${dst_size:-0}"
+		printf '  gzipped: %s -> %s.tar.gz  (%s -> %s KB)\n' \
+			"$name" "$name" \
+			"$((src_size / 1024))" "$((dst_size / 1024))"
+	else
+		err "gzip failed, falling back to delete: $name"
+		rm -rf -- "$base" 2>/dev/null && printf '  deleted: %s\n' "$name"
+	fi
 }
