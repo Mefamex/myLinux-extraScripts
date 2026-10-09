@@ -103,7 +103,7 @@ log_open() {
 
 	# The directory is already created and verified by resolve_log_dir()
 
-	# Two runs in the same minute (two terminals, a test) must not overwrite
+	# Two runs in the same second (two terminals, a test) must not overwrite
 	# each other.
 	#
 	# The classic `[ -e "$f" ]` LOOP RACES: if three processes start at once,

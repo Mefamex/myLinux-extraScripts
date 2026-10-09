@@ -274,9 +274,3 @@ apps_update() {
 	printf '================================\n\n\n'
 	return 0
 }
-
-# --- initialization --------------------------------------------------------
-
-_load_sort_order
-_load_channels
-_sort_channels

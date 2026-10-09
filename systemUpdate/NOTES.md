@@ -69,6 +69,13 @@ plain write error instead of a death, and `_run_tty()` stops reopening the
 FIFO once its reader (tee) is gone. Verified: `.. | head -3` completes with
 rc=0, a complete log file, and no leftover temp dir.
 
+### Composer channel requires a global composer.json
+`composer global show -N` fails (rc=1, "could not find composer.json") when
+composer exists but no global packages were ever installed. The channel counts
+as absent unless composer AND a global composer.json exist. Home resolution
+mirrors composer itself: `COMPOSER_HOME` → `~/.composer` (legacy) →
+`$XDG_CONFIG_HOME|~/.config/composer`. Fixed 2026-10-09.
+
 ### Section spacing
 Each section header prints three blank lines after the header block
 (`section()` adds `\n\n\n`). Confirmed against the real log, where

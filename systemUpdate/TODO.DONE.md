@@ -2,6 +2,31 @@
 
 ## Done
 
+### 2026-10-09 Composer channel no longer errors without a global composer.json
+`composer global show -N` failed loudly (rc=1, "could not find composer.json",
+plus a `!! report command failed` line) whenever composer exists but no global
+packages were ever installed. CHANNEL_PRESENT in composer.sh now requires
+composer AND a global composer.json, resolving the composer home the same way
+composer itself does (`COMPOSER_HOME` env → `~/.composer` legacy fallback →
+`$XDG_CONFIG_HOME|~/.config/composer`). The channel now reports "not
+installed" cleanly. Tested: no composer.json → absent; COMPOSER_HOME with a
+require section → present; empty require → present, nothing to update.
+
+### 2026-10-09 sort.conf edge cases verified; duplicate warnings removed
+Verified on a throwaway copy of the tool: duplicate IDs warn and the first
+occurrence wins, unknown IDs warn (exact match), a missing sort.conf warns and
+falls back to alphabetic order, comment/empty lines parse cleanly. While
+verifying, the redundant `_load_sort_order`/`_load_channels`/`_sort_channels`
+calls at the end of runner.sh were removed — nothing outside runner.sh reads
+the channel arrays (verified by grep), and every sort.conf warning used to
+print TWICE (once at source time, once inside apps_update).
+
+### 2026-10-09 _run_tty exit code verified
+The TODO worried _run_tty might return 0 on pipefail pipelines. Verified with
+a harness: `false` → 1, `true` → 0, `false | true` (pipefail) → 1,
+`true | true` → 0. The command's exit code propagates correctly; the item is
+closed.
+
 ### 2026-10-09 Full script audit (see TODO.md "Bugs found in review")
 Reviewed the whole tool: `bash -n` + `shellcheck` clean (apart from known
 SC2034/SC2329 noise), ran `--status` end-to-end, verified every channel's

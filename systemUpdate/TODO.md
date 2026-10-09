@@ -32,10 +32,10 @@ Record of the review findings. Everything fixed is documented in the
 - [FIXED] Doc drift: README/NOTES claims that were never true (`.gitignore`
   listed but absent, "every line commented out", cascade step that was never
   implemented, header comment said "same minute").
-- [OPEN] composer channel: `composer global show -N` fails loudly (rc=1, error
-  text) when no global composer.json exists. Fix: `CHANNEL_PRESENT` should also
-  require a composer.json (or a `composer global` project dir) so the channel
-  reports "not installed" instead of an error.
+- [FIXED] composer channel: `composer global show -N` failed loudly (rc=1,
+  "could not find composer.json") when composer exists but no global packages
+  were installed. CHANNEL_PRESENT now requires composer AND a global
+  composer.json, so the channel reports "not installed" (2026-10-09).
 - [OPEN] Report-only channels (`cargo`, `docker`, `flatpak`, `dotnet`) print
   the inventory, not a diff — same class of issue the VS Code channel had (see
   "Optional: real diffs" above).
@@ -49,10 +49,13 @@ Record of the review findings. Everything fixed is documented in the
   dir removed — see TODO.DONE.md)
 
 ### Validate `sort.conf` edge cases
-- Duplicate IDs → first wins, warn on later (implemented, verify)
-- Unknown IDs → warn, continue (implemented, verify — now exact match)
-- Missing `sort.conf` → warn + alphabetic fallback (implemented, verify)
-- Empty lines / comments → ignored (implemented, verify)
+All verified 2026-10-09 on a throwaway copy of the tool (see TODO.DONE.md):
+- Duplicate IDs → first wins, warn on later ✅
+- Unknown IDs → warn, continue (exact match) ✅
+- Missing `sort.conf` → warn + alphabetic fallback ✅
+- Empty lines / comments → ignored ✅
+(While verifying: the redundant runner init was removed, which had been
+printing every warning twice.)
 
 ### Test `--full` flag end-to-end
 - `--full --system` → skip confirmations, pacman/yay still prompt [Y/n]
@@ -99,7 +102,9 @@ Record of the review findings. Everything fixed is documented in the
 - System update: `pacman -Sy` once at start (already done via yay)
 
 ### Error handling
-- `_run_tty`: capture command exit code correctly (currently returns 0 on pipefail?)
+- ~~`_run_tty`: capture command exit code correctly (currently returns 0 on
+  pipefail?)~~ → ✅ verified 2026-10-09: rc propagates correctly, including
+  pipefail pipelines (`false` → 1, `true | true` → 0, `false | true` → 1).
 - Channel update failure: continue vs abort (currently continues, logs warn)
 - Network timeouts: VS Code (25s), consider making configurable
 
