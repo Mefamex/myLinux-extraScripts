@@ -15,7 +15,7 @@
 # The full stdout + stderr of every run is written to one file.
 # Directory resolves via cascade:
 #   ~/Belgeler/systemUpdate → ~/Documents/systemUpdate → ~/systemUpdate → ~/.local/state/systemUpdate
-# Two runs in the same minute get -1, -2, ... instead of overwriting each other.
+# Two runs in the same second get -1, -2, ... instead of overwriting each other.
 #
 # Rules:
 #   - EVERY channel asks for confirmation, default no. A channel that is
@@ -36,6 +36,14 @@
 #   SYSUPDATE_STATUS_AUR=1            also query AUR in --status (needs network)
 #   SYSUPDATE_CONFIG=/full/path       use a different config file
 set -uo pipefail
+
+# If the output is piped to a consumer that closes early (e.g. `.. | head` or
+# `.. | less` and quitting), tee dies of SIGPIPE. The default action would then
+# kill THIS shell too — skipping the EXIT trap and leaking the temp FIFO dir
+# and a truncated log (measured). Ignoring SIGPIPE turns that death into a
+# plain write error (EPIPE) and lets the EXIT trap run; _run_tty additionally
+# stops reopening the FIFO once its reader is gone. See lib/log.sh.
+trap '' PIPE
 
 # --- modules -------------------------------------------------------------
 #

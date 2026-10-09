@@ -251,18 +251,22 @@ info() {
 # In report mode (--status) confirmations are never asked.
 REPORT_ONLY="${REPORT_ONLY:-0}"
 
-# confirm <question>  →  0=yes, 1=no/skip, 2=defer, 3=update-all, 4=quit
+# confirm <question> [options]  →  0=yes, 1=no/skip, 2=defer, 3=update-all, 4=quit
 #
 # Default is NO. A skipped channel is only lost work, but a channel that runs
 # by accident cannot be undone.
 #
-# Extended options (used by apps_update but not system_update):
+# [options] (default "y/N/a/A/q") is the literal text shown inside the prompt.
+# The extended options are used by apps_update but NOT system_update, so the
+# firmware step passes "y/N" and the prompt no longer offers actions the
+# caller would silently ignore.
+# Extended options:
 #   a  defer: skip now, but run LAST after all other channels are done
 #   A  update-all: run this channel plus every remaining channel without
 #      asking again
 #   q  quit: abort the whole run immediately
 confirm() {
-	local question="$1" answer=""
+	local question="$1" answer="" opts="${2:-y/N/a/A/q}"
 	if [ "$REPORT_ONLY" = 1 ]; then
 		return 1
 	fi
@@ -274,7 +278,7 @@ confirm() {
 		printf '    (no interaction, skipping)\n'
 		return 1
 	fi
-	read -r -p "    $question [y/N/a/A/q] " answer
+	read -r -p "    $question [$opts] " answer
 	# a (defer) and A (update-all+remaining) are distinct:
 	# lowercase a defers this channel only, uppercase A updates this plus
 	# all remaining channels without asking again.
@@ -346,16 +350,27 @@ _run() {
 # reopen the FIFO.
 _run_tty() {
 	local rc
-	# Save current stdout/stderr (which go to FIFO via tee)
-	exec 3>&1 4>&2
-	# Redirect stdout/stderr to the FIFO so tee captures output for both terminal and log
-	exec 1>"$_FIFO" 2>&1
+	# If the tee that drains the FIFO is already dead (the output was piped to
+	# a consumer that closed early, e.g. `.. | head`), REOPENING the FIFO would
+	# block forever: opening for write waits for a reader. Run the command with
+	# the current descriptors instead; the EXIT trap still cleans up the temp
+	# dir. With SIGPIPE ignored (see systemUpdate.sh) writes to the dead pipe
+	# fail with EPIPE instead of killing the shell.
+	if [ -n "$_TEE_PID" ] && kill -0 "$_TEE_PID" 2>/dev/null; then
+		# Save current stdout/stderr (which go to FIFO via tee)
+		exec 3>&1 4>&2
+		# Redirect stdout/stderr to the FIFO so tee captures output for both terminal and log
+		exec 1>"$_FIFO" 2>&1
 
-	# Run command, output goes to FIFO -> tee -> (terminal + log)
-	_run "$1"
-	rc=$?
+		# Run command, output goes to FIFO -> tee -> (terminal + log)
+		_run "$1"
+		rc=$?
 
-	# Restore stdout/stderr to FIFO
-	exec 1>&3 2>&4 3>&- 4>&-
+		# Restore stdout/stderr to FIFO
+		exec 1>&3 2>&4 3>&- 4>&-
+	else
+		_run "$1"
+		rc=$?
+	fi
 	return "$rc"
 }

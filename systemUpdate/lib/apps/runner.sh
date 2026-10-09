@@ -69,6 +69,12 @@ _load_channels() {
 
 	for f in "$_APPS_DIR/channels"/*.sh; do
 		[ -f "$f" ] || continue
+
+		# Drop any values left over from the previous channel file. Without
+		# this, a file that forgot one variable would silently reuse the
+		# previous channel's value — including running ITS update command.
+		unset CHANNEL_ID CHANNEL_LABEL CHANNEL_PRESENT CHANNEL_REPORT CHANNEL_UPDATE
+
 		# shellcheck source=/dev/null
 		. "$f"
 
@@ -89,7 +95,8 @@ _load_channels() {
 			warn "Missing CHANNEL_REPORT in $f"
 			continue
 		}
-		# CHANNEL_UPDATE can be empty (report-only)
+		# CHANNEL_UPDATE can be empty (report-only); a file that omits it is
+		# treated the same way (${parameter:-} keeps `set -u` happy).
 		# shellcheck disable=SC2153  # CHANNEL_UPDATE is set by sourced channel file
 
 		# Store metadata
@@ -98,14 +105,20 @@ _load_channels() {
 		CHANNELS_PRESENT+=("$CHANNEL_PRESENT")
 		CHANNELS_REPORT+=("$CHANNEL_REPORT")
 		# shellcheck disable=SC2153  # CHANNEL_UPDATE is set by sourced channel file
-		CHANNELS_UPDATE+=("$CHANNEL_UPDATE")
+		CHANNELS_UPDATE+=("${CHANNEL_UPDATE:-}")
 		# Sort key: position in sort.conf, or 9999 for unlisted (alphabetic later)
 		CHANNELS_SORT+=("${sort_index[$CHANNEL_ID]:-9999}")
 	done
 
-	# Warn on unknown IDs in sort.conf
+	# Warn on unknown IDs in sort.conf. Exact string comparison: a regex here
+	# would let an ID like "pip" silently match a "pipx" channel and suppress
+	# the warning.
 	for id in "${SORT_ORDER[@]}"; do
-		[[ " ${CHANNELS_ID[*]} " =~ $id ]] || warn "sort.conf: unknown channel ID '$id' (ignored)"
+		local known=0 c
+		for c in "${CHANNELS_ID[@]}"; do
+			[ "$c" = "$id" ] && known=1 && break
+		done
+		[ "$known" -eq 1 ] || warn "sort.conf: unknown channel ID '$id' (ignored)"
 	done
 }
 
@@ -232,15 +245,15 @@ apps_update() {
 		fi
 	done
 
-	# Process deferred channels
+	# Process deferred channels. Their report already ran once in the main
+	# loop above (the "defer" answer comes AFTER the report), so it is not
+	# repeated here.
 	for index in "${deferred[@]}"; do
 		local id="${CHANNELS_ID[index]}"
 		local label="${CHANNELS_LABEL[index]}"
-		local report_command="${CHANNELS_REPORT[index]}"
 		local update_command="${CHANNELS_UPDATE[index]}"
 
 		printf '\n  [deferred] %s — %s\n' "$id" "$label"
-		report "$report_command"
 		confirm "Update $label?"
 		case $? in
 		0) ;;

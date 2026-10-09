@@ -57,15 +57,34 @@ config_load() {
 	#
 	# Only SYSUPDATE_* env vars are read; bare LOG_DIR/LOG_KEEP/etc. from the
 	# user's shell are ignored to avoid accidental overrides.
+	# A value already set by the config file (sourced above) is KEPT: the
+	# built-in default only applies when neither the config file nor the
+	# environment provided one. Precedence: environment > config file > default.
 	# shellcheck disable=SC2034  # LOG_DIR is read in lib/log.sh
-	LOG_DIR="${SYSUPDATE_LOG_DIR:-}"
+	LOG_DIR="${SYSUPDATE_LOG_DIR:-${LOG_DIR:-}}"
 	# shellcheck disable=SC2034  # SKIP_CHANNELS is read in lib/apps.sh
-	SKIP_CHANNELS="${SYSUPDATE_SKIP_CHANNELS:-}"
+	SKIP_CHANNELS="${SYSUPDATE_SKIP_CHANNELS:-${SKIP_CHANNELS:-}}"
 	# shellcheck disable=SC2034  # GO_BIN_DIR is read in lib/apps.sh
 	# GO_BIN_DIR: default from go env, so a custom GOBIN or GOPATH is respected.
-	GO_BIN_DIR="${SYSUPDATE_GO_BIN_DIR:-$(go env GOBIN 2>/dev/null || printf '%s/bin' "$(go env GOPATH 2>/dev/null || echo "$HOME/go")")}"
+	# `go env GOBIN` prints an EMPTY line with rc=0 when GOBIN is unset, so the
+	# empty case must fall back too — the old one-liner's `||` default never
+	# fired, leaving GO_BIN_DIR="" and the go channel silently "not installed".
+	GO_BIN_DIR="${SYSUPDATE_GO_BIN_DIR:-${GO_BIN_DIR:-}}"
+	if [ -z "$GO_BIN_DIR" ]; then
+		_go_bin="$(go env GOBIN 2>/dev/null)"
+		_go_path="$(go env GOPATH 2>/dev/null)"
+		if [ -n "$_go_bin" ]; then
+			GO_BIN_DIR="$_go_bin"
+		elif [ -n "$_go_path" ]; then
+			GO_BIN_DIR="$_go_path/bin"
+		else
+			# No go toolchain at all; assume the conventional layout.
+			GO_BIN_DIR="$HOME/go/bin"
+		fi
+		unset _go_bin _go_path
+	fi
 	# shellcheck disable=SC2034  # LOG_KEEP is read in lib/log.sh
-	LOG_KEEP="${SYSUPDATE_LOG_KEEP:-50}"
+	LOG_KEEP="${SYSUPDATE_LOG_KEEP:-${LOG_KEEP:-50}}"
 	# shellcheck disable=SC2034  # STATUS_AUR is read in lib/status.sh
-	STATUS_AUR="${SYSUPDATE_STATUS_AUR:-0}"
+	STATUS_AUR="${SYSUPDATE_STATUS_AUR:-${STATUS_AUR:-0}}"
 }

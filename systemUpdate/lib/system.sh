@@ -214,7 +214,7 @@ _firmware_step() {
 	# decision is based on rc.
 	if [ "$rc" -eq 0 ] && [ -n "${output//[[:space:]]/}" ]; then
 		printf '%s\n' "$output"
-		if confirm "A firmware update was found. Apply it?"; then
+		if confirm "A firmware update was found. Apply it?" y/N; then
 			if fwupdmgr update; then
 				return 0
 			fi
