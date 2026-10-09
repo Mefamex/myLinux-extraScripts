@@ -89,7 +89,9 @@ printing every warning twice.)
 ### Config validation
 - Add `config_validate` function to check config file syntax on load
 - Warn on deprecated/unknown settings
-- Document all `SYSUPDATE_*` env vars in one place
+- ~~Document all `SYSUPDATE_*` env vars in one place~~ → ✅ done 2026-10-09:
+  README "Settings" table covers the five settings + env vars, and the
+  `SYSUPDATE_CONFIG` path override is now documented there too
 
 ### Log improvements
 - Add `--log-dir` CLI flag to override log directory (currently only env/config)

@@ -2,6 +2,12 @@
 
 ## Done
 
+### 2026-10-09 SYSUPDATE_CONFIG documented in README
+The "Settings" table already listed the five settings with their env vars; the
+`SYSUPDATE_CONFIG` path override was only mentioned in lib/config.sh's header
+and is now documented in README too. TODO item "Document all SYSUPDATE_* env
+vars in one place" closed.
+
 ### 2026-10-09 Composer channel no longer errors without a global composer.json
 `composer global show -N` failed loudly (rc=1, "could not find composer.json",
 plus a `!! report command failed` line) whenever composer exists but no global

@@ -177,6 +177,10 @@ overrides the file.
 | `LOG_KEEP`      | `SYSUPDATE_LOG_KEEP`      | `50`           | How many log files to keep                                                                            |
 | `STATUS_AUR`    | `SYSUPDATE_STATUS_AUR`    | `0`            | If `1`, `--status` also queries the AUR (`yay -Qua`) — this does a network request and is not instant |
 
+The config file itself can be pointed elsewhere with `SYSUPDATE_CONFIG=/path`
+(no config-file equivalent; default is the tracked `config` next to the script).
+Precedence is `SYSUPDATE_*` env var → `config` file → built-in default.
+
 ## Reports are never truncated
 
 Every channel prints *what would change*, in full, with no line cap. Here is
