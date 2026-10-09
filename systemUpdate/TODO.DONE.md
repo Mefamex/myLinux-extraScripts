@@ -2,6 +2,19 @@
 
 ## Done
 
+### 2026-10-09 New channels: bun, deno, rustup
+Three self-updating runtime/toolchain channels following the existing
+codex/claude pattern (PRESENT = `command -v <tool>`, REPORT = `--version`,
+UPDATE = the tool's self-updater):
+- `bun` — `bun upgrade`; `bun --version` reports the current version
+- `deno` — `deno upgrade`; report is `deno --version | head -1` (plain
+  `deno --version` prints three lines: deno, v8, typescript)
+- `rustup` — `rustup update`; report `rustup show active-toolchain`
+Appended to sort.conf (positions 17/18/19), README channel table updated.
+Command syntax verified against official docs; all three exit 0 when already
+current. None is installed on this machine, so they report "not installed"
+here — verified via --status: 19 channels, no warnings, rc=0.
+
 ### 2026-10-09 SYSUPDATE_CONFIG documented in README
 The "Settings" table already listed the five settings with their env vars; the
 `SYSUPDATE_CONFIG` path override was only mentioned in lib/config.sh's header

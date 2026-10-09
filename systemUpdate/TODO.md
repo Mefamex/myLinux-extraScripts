@@ -119,10 +119,10 @@ printing every warning twice.)
 
 ### Add new channels
 - `mise` / `asdf` / `rtx` — version manager tools
-- `bun` — `bun upgrade`
-- `deno` — `deno upgrade`
-- `rustup` — `rustup update` (system tool, but manages toolchains)
 - `snap` — `snap refresh` (if installed)
+- ~~`bun` — `bun upgrade`~~ → ✅ added 2026-10-09
+- ~~`deno` — `deno upgrade`~~ → ✅ added 2026-10-09
+- ~~`rustup` — `rustup update`~~ → ✅ added 2026-10-09
 
 ### Shell completions
 - Generate bash/zsh/fish completions for `systemUpdate.sh`

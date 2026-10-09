@@ -96,7 +96,7 @@ The order is intentional:
 App channels are defined in individual files under `lib/apps/channels/` (e.g.
 `npm.sh`, `code.sh`, `pipx.sh`, etc.). Execution order is controlled by
 `lib/apps/sort.conf` (one channel ID per line). Each one is numbered
-(e.g. `1/16`) so you can see exactly how far the run has gone.
+(e.g. `1/19`) so you can see exactly how far the run has gone.
 
 | Channel    | What it does                                                        |
 | ---------- | ------------------------------------------------------------------- |
@@ -112,6 +112,9 @@ App channels are defined in individual files under `lib/apps/channels/` (e.g.
 | `go`       | `go install <module>@latest` per tool                               |
 | `composer` | `composer global update`                                            |
 | `gh`       | `gh extension upgrade --all`                                        |
+| `bun`      | `bun upgrade`                                                       |
+| `deno`     | `deno upgrade`                                                      |
+| `rustup`   | `rustup update`                                                     |
 
 Report-only channels (they print a list and never run an update): `cargo`,
 `docker`, `flatpak`, `dotnet`.
