@@ -2,6 +2,74 @@
 
 ## Done
 
+### 2026-10-09 Full script audit (see TODO.md "Bugs found in review")
+Reviewed the whole tool: `bash -n` + `shellcheck` clean (apart from known
+SC2034/SC2329 noise), ran `--status` end-to-end, verified every channel's
+update/report command exists in its `--help`, measured config precedence,
+GO_BIN_DIR resolution, SIGINT cleanup (rc=130, log footer written, FIFO dir
+removed) and pipe-to-`head` behavior. Findings and still-open items live in
+TODO.md; the fixes from the audit are the entries below.
+
+### 2026-10-09 Docs rewritten to match reality
+README.md, NOTES.md, MODULAR_APPS_PLAN.md and TODO.md re-edited after the
+audit: `.gitignore` row removed (the file does not exist in the repo), "every
+line commented out" claims corrected (the tracked `config` ships active
+values), the NOTES cascade now matches `resolve_log_dir()` (the
+`~/.config/user-dirs.dirs` step was never implemented and is gone), the
+`systemUpdate.sh` header says "same second" (was "same minute"), and
+MODULAR_APPS_PLAN.md is marked as implemented with the deviations noted.
+
+### 2026-10-09 Unknown-ID check in sort.conf is now exact
+`runner.sh` checked unknown IDs with a regex (`[[ ... =~ $id ]]`), so an ID
+like `pip` could silently match a `pipx` channel and suppress the warning.
+Replaced with an exact string comparison over `CHANNELS_ID`.
+
+### 2026-10-09 Runner no longer reuses stale channel variables
+A channel file that forgot a variable kept the PREVIOUS file's value, and
+under `set -u` a missing `CHANNEL_UPDATE` could crash the run. Worse, before
+that crash a wrong inherited value could silently run the WRONG update command.
+`_load_channels()` now unsets `CHANNEL_ID/LABEL/PRESENT/REPORT/UPDATE` before
+sourcing each file and stores `CHANNEL_UPDATE` via `${CHANNEL_UPDATE:-}`
+(missing = report-only, same as an explicit `""`).
+
+### 2026-10-09 Deferred channels no longer report twice
+`runner.sh` ran `report` inside the deferred loop even though the same report
+had already run before the `a` (defer) answer in the main loop. The duplicate
+call is gone.
+
+### 2026-10-09 System-scope confirmation no longer advertises a/A/q
+`confirm()` takes an options argument (default `y/N/a/A/q`); the firmware step
+in `lib/system.sh` now prompts `[y/N]` only. Previously the prompt offered
+`a`/`A`/`q` in the system scope, where those answers were silently treated as
+"no" — a user pressing `q` expected an abort and got a skip.
+
+### 2026-10-09 SIGPIPE no longer kills the script (piping output is safe)
+`./systemUpdate.sh --status | head` used to kill the shell: the consumer
+closing early made tee die of SIGPIPE, which killed bash before the EXIT trap
+ran — leaking a temp FIFO dir in `/tmp` and leaving a log without its footer
+(both measured). `systemUpdate.sh` now ignores SIGPIPE (`trap '' PIPE`), so a
+closed consumer is a plain EPIPE write error instead of a death, and
+`_run_tty()` stops reopening the FIFO once its reader (tee) is gone. Verified:
+`.. | head -3` completes with rc=0, the log file is complete, no temp dir is
+left behind.
+
+### 2026-10-09 GO_BIN_DIR no longer collapses to an empty string
+`go env GOBIN` prints an empty line with rc=0 when GOBIN is unset, so the old
+`|| printf` fallback never fired and GO_BIN_DIR became "" — then `-d ""`
+failed and the go channel reported "not installed" despite installed tools.
+`config_load()` now treats an empty `go env` result as "not set" and falls
+back to `$GOPATH/bin`, then `$HOME/go/bin` without a go toolchain
+(measured with a go-less PATH).
+
+### 2026-10-09 Config file precedence bug (env > config > default)
+`config` was dead weight: `config_load()` sourced it and then unconditionally
+overwrote all five settings with the built-in defaults, so `LOG_DIR`,
+`SKIP_CHANNELS`, `GO_BIN_DIR`, `LOG_KEEP` and `STATUS_AUR` from the file never
+took effect (`STATUS_AUR=1` never enabled the AUR check, `SKIP_CHANNELS` never
+skipped). Each setting now resolves `SYSUPDATE_*` → config value → default.
+Measured: `LOG_KEEP=7`, `SKIP_CHANNELS="npm code"`, `STATUS_AUR=1` from a
+config file are all honored, and an env var still wins over the file.
+
 ### 2026-10-04 Capture full update output in logs (terminal + log)
 Restored `_run_tty` in `lib/log.sh` (was lost during modularization). Now writes update output to FIFO so `tee` captures it for both terminal (real-time) and log file. Verified: `--apps`, `--system`, `--status` all log update output. No ANSI escape codes in logs.
 

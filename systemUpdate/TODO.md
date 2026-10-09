@@ -13,16 +13,44 @@ available for them without going to their registries the way VS Code does.
 Make pacman/yay download progress (bytes downloaded, speed, ETA, per-package
 progress) visible in real time on terminal while also being logged.
 
+## Bugs found in review (2026-10-09)
+
+Record of the review findings. Everything fixed is documented in the
+"2026-10-09" section of TODO.DONE.md; still-open items are marked **[OPEN]**.
+
+- [FIXED] `config` file was completely ignored (precedence was env > default).
+- [FIXED] `GO_BIN_DIR` collapsed to "" when `go env GOBIN` prints empty.
+- [FIXED] SIGPIPE on `.. | head` / early `less` quit killed the script, leaked
+  `/tmp/.systemUpdate-tee-*` and truncated the log.
+- [FIXED] `confirm` prompt advertised `a`/`A`/`q` in the system scope
+  (firmware), where they were silently treated as "no".
+- [FIXED] Deferred channels ran their report twice.
+- [FIXED] Runner reused a previous channel's `CHANNEL_*` when a file forgot
+  one; a missing `CHANNEL_UPDATE` could silently run the wrong update command.
+- [FIXED] Unknown-ID check in sort.conf used regex matching (`pip` matched
+  `pipx`).
+- [FIXED] Doc drift: README/NOTES claims that were never true (`.gitignore`
+  listed but absent, "every line commented out", cascade step that was never
+  implemented, header comment said "same minute").
+- [OPEN] composer channel: `composer global show -N` fails loudly (rc=1, error
+  text) when no global composer.json exists. Fix: `CHANNEL_PRESENT` should also
+  require a composer.json (or a `composer global` project dir) so the channel
+  reports "not installed" instead of an error.
+- [OPEN] Report-only channels (`cargo`, `docker`, `flatpak`, `dotnet`) print
+  the inventory, not a diff — same class of issue the VS Code channel had (see
+  "Optional: real diffs" above).
+
 ## Re-check / Verify
 
 ### Verify `_run_tty` FIFO approach under load
 - Run multiple concurrent updates (parallel terminals) → ensure no FIFO collision
 - Test with large output (pacman -Syu with many packages) → ensure tee doesn't block
-- Test SIGINT during update → verify trap cleanup works (FIFO unlink + tee wait)
+- SIGINT during update → ✅ verified 2026-10-09 (rc=130, footer written, FIFO
+  dir removed — see TODO.DONE.md)
 
 ### Validate `sort.conf` edge cases
 - Duplicate IDs → first wins, warn on later (implemented, verify)
-- Unknown IDs → warn, continue (implemented, verify)
+- Unknown IDs → warn, continue (implemented, verify — now exact match)
 - Missing `sort.conf` → warn + alphabetic fallback (implemented, verify)
 - Empty lines / comments → ignored (implemented, verify)
 
@@ -35,7 +63,6 @@ progress) visible in real time on terminal while also being logged.
 ### Channel-specific verification
 - **go channel**: private repo handling (404 → skip gracefully)
 - **code channel**: marketplace API rate limits / timeouts
-- **composer channel**: fails cleanly when no composer.json
 - **docker channel**: daemon not running → "not installed" correctly
 - **flatpak/dotnet/cargo**: report-only, no update command
 

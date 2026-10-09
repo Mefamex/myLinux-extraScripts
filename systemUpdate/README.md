@@ -150,7 +150,7 @@ These are deliberate choices:
 | File                         | Purpose                                                                |
 | ---------------------------- | ---------------------------------------------------------------------- |
 | `systemUpdate.sh`            | Entry point: arguments, signal trap, log orchestration                 |
-| `config`                     | The settings. Tracked in git, every line commented out                 |
+| `config`                     | The settings. Tracked in git; change values here to override the defaults |
 | `lib/config.sh`              | Loads settings from the config file or environment                     |
 | `lib/log.sh`                 | FIFO+tee logging, confirmations, reporting, log pruning                |
 | `lib/system.sh`              | The 5-step system update + reboot detection                            |
@@ -163,7 +163,6 @@ These are deliberate choices:
 | `TODO.md`                    | Open work                                                              |
 | `TODO.DONE.md`               | Completed tasks with dates                                             |
 | `NOTES.md`                   | Technical notes                                                        |
-| `.gitignore`                 | Only the temporary logging FIFOs (`config` is deliberately tracked)    |
 
 ## Settings
 
@@ -242,3 +241,9 @@ removes our own log files — never anything else.
 That is intentional: each section prints three extra blank lines after its
 header to make the log much easier to skim. The formatting is deliberate, not
 a bug.
+
+**I piped the output into `head` / `less` and quit early.**
+That is safe: SIGPIPE is ignored, so the run completes, the log file is written
+in full and no temp files are left behind. (Before 2026-10-09 this could
+truncate the log and leave a `/tmp/.systemUpdate-tee-*` directory — it is fixed
+and covered by a regression test in TODO.DONE.md.)

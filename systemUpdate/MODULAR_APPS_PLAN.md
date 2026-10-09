@@ -1,5 +1,19 @@
 # Modular App Channels — Implementation Plan
 
+> ✅ **IMPLEMENTED 2026-10-04** — built as `lib/apps/` (`runner.sh`,
+> `sort.conf`, 16 channel files). This document is the original design and is
+> kept for reference; the code is the source of truth.
+>
+> Deviations from this plan (applied 2026-10-09, see TODO.DONE.md):
+> - The unknown-ID check uses exact string comparison, not the regex in the
+>   draft below (a regex let an ID like `pip` silently match a `pipx` channel).
+> - `_load_channels()` now unsets every `CHANNEL_*` variable before sourcing
+>   each file, so a file missing one can no longer reuse the previous file's
+>   value (which could have run the wrong update command).
+> - Duplicate IDs in `sort.conf`: first occurrence wins, later ones warn.
+> - Sorting, `SKIP_CHANNELS`, report-only channels and the summary line behave
+>   exactly as planned.
+
 ## Current State
 - Single `lib/apps.sh` with 16 channels in a heredoc table
 - Helper functions for complex channels: `_code_report`, `_code_report_fallback`, `_pip_report`, `_upd_pip`, `_go_available`, `_go_report`, `_go_module`, `_upd_go`
